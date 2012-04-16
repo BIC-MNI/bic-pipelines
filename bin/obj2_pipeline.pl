@@ -1,10 +1,25 @@
 #!/usr/bin/env perl
 
+
+############################# MNI Header #####################################
+#@NAME       :  obj2_pipeline.pl
+#@DESCRIPTION:  simplified image processing pipeline for infants
+#@COPYRIGHT  :
+#              Vladimir S. Fonov  2009
+#              Montreal Neurological Institute, McGill University.
+#              Permission to use, copy, modify, and distribute this
+#              software and its documentation for any purpose and without
+#              fee is hereby granted, provided that the above copyright
+#              notice appear in all copies.  The author and McGill University
+#              make no representations about the suitability of this
+#              software for any purpose.  It is provided "as is" without
+#              express or implied warranty.
+###############################################################################
+
 use strict;
 use Getopt::Long;
 use File::Basename;
 use File::Temp qw/ tempdir /;
-#use NeuroDB::DBI;
 
 my $verbose=1;
 my $clobber=0;
@@ -23,8 +38,6 @@ my $age=0;
 my $t1_mask;
 my $t2_mask;
 my $ants=0;
-my $nihpd=0;
-my $nihpd_secret=0;
 
 GetOptions(
       'verbose'           => \$verbose,
@@ -73,7 +86,6 @@ foreach $in(@ARGV)
 {
   $file_id{$in}=get_file_id($in);
 }
-
 
 $native_t1w=shift @ARGV;
 $native_t2w=shift @ARGV;
@@ -330,13 +342,6 @@ if($manual && -e $manual_file_list{'stx_msk'})
     do_cmd('cp',$manual_file_list{'stx_msk'}, $initial_file_list{'stx_msk'});
   }
 }else{
-
-#  if( $have_t2 && $have_pd )
-#  {
-#    do_cmd('obj2_bet.pl',$initial_file_list{'stx2_c1_'},$initial_file_list{'stx_msk'},
-#           '--mask',$model_mask2,'--t2') unless -e $initial_file_list{'stx_msk'};
-#
-#  } else {
 
   unless(-e $initial_file_list{'stx_msk'})
   {
@@ -657,24 +662,6 @@ if($relx)
   }
 }
 
-if($nihpd) #register additional files from CIVET
-{
-  my $i;
-  foreach $i(keys(%initial_file_list)) 
-  {
-    next unless $i=~/^civet/;
-
-    next unless -e $initial_file_list{$i};
-
-    $file_id{$initial_file_list{$i}}= register_in_db($initial_file_list{$i},
-                      $i,'','linear','clean',$file_id{$initial_file_list{'native_t1w'}});
-  }
-
-  put_gi_index_in_db($initial_file_list{'civet_gyrification_index_left'},'left',$file_id{$initial_file_list{'civet_gyrification_index_left'}}) if -e $initial_file_list{'civet_gyrification_index_left'};
-  put_gi_index_in_db($initial_file_list{'civet_gyrification_index_right'},'right',$file_id{$initial_file_list{'civet_gyrification_index_right'}}) if -e $initial_file_list{'civet_gyrification_index_right'};
-  
-}
-
 if($deface && $nonlinear)
 {
 	print "Performing defacing...\n";
@@ -785,10 +772,7 @@ if($deface && $nonlinear)
   
     $file_id{$initial_file_list{'deface_stx_pdw'}}=register_in_db($initial_file_list{'deface_stx_pdw'},'tal_mnc','t1w','linear','',$file_id{$initial_file_list{'native_pdw'}}) if !$nihpd_secret;
   }
-
-  
  }
- 
 } #deface
 
 sub do_cmd {
@@ -939,45 +923,12 @@ sub get_list_files_native_files
 # register_in_db(filename,outputtype,protocol,coord space,classify,sourceId) will return an ID
 sub register_in_db
 {
-  return 0 unless $dbh;
-  my ($file,$output_type,$protocol,$coordinate_space,$classify_algorithm,$source)=@_;
-  $file=`realpath $file`; chomp($file);
-  my $id=get_file_id($file);
-  #print "ID:$id\n";
-
-  if($id)
-  {
-    print "Found $file in the Database ID: $id\n";
-    return $id;
-  } else {
-    
-    my @insert_args = ('register_minc_db',$file,$output_type, '-pipeline', 'v1.4' );
-
-    if($protocol)          { push(@insert_args, '-protocol', $protocol); }
-    if($coordinate_space)  { push(@insert_args, '-coordspace', $coordinate_space); }
-    if($classify_algorithm){ push(@insert_args, '-classifyalg', $classify_algorithm); }
-    if($source)            { push(@insert_args, '-source', $source); }
-
-    push @insert_args,'-user',"'$nihpd_user'",'-passwd',"'$nihpd_passwd'";
-
-    my $line = join(" ",  @insert_args);
-    #print("\n\ninsert_line:$line\n\n");
-    my $dbresults;
-    $dbresults = `$line`;
-    print "DBResults: ", $dbresults;
-    my ($d,$newfileID) = split("Registered with FileID: ", $dbresults);
-    chomp($newfileID);
-    return $newfileID;
-  }
+  return 0 ;
 }
 
 sub get_file_id
 {
-  return 0 unless $dbh;
-  my $in=$_[0];
-  print "file:$in\n";
-  my $file = NeuroDB::File->new(\$dbh);
-  return  $file->findFile($in);
+  return 0 ;
 }
 
 # Based on create_header_info_for_many_parentedKitching.

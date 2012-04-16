@@ -1,16 +1,20 @@
 #!/usr/bin/env perl
 
-####################################################################
-# main_pipe_simplified.pl  
-#
-# Vladimir S. Fonov
-# February, 2009
-# Brain Imaging Centre, MNI
-#
-# Larry Baer
-# October, 2004
-# Brain Imaging Centre, MNI
-###################################################################
+############################# MNI Header #####################################
+#@NAME       :  main_pipe_simplified.pl  
+#@DESCRIPTION:  simplified image processing pipeline
+#@COPYRIGHT  :
+#              Vladimir S. Fonov  February, 2009
+#              Larry Baer         October, 2004
+#              Montreal Neurological Institute, McGill University.
+#              Permission to use, copy, modify, and distribute this
+#              software and its documentation for any purpose and without
+#              fee is hereby granted, provided that the above copyright
+#              notice appear in all copies.  The author and McGill University
+#              make no representations about the suitability of this
+#              software for any purpose.  It is provided "as is" without
+#              express or implied warranty.
+###############################################################################
 
 use strict;
 use Getopt::Long;
@@ -242,29 +246,6 @@ foreach $type(@types)
     
     $list_fileIDs{$crop_current} = $native_file_ID;
 
-    if($b0 && -e $b0)
-    {
-      ######################
-      ##pipeline b0correction for each anatomical
-      $program = "$bin_dir/pipeline_b0correction2.pl";
-      @inputs = [$initial_file_list{$native_current}];
-      
-      #$parameter=" -geo ${geo} " if $geo && -e $geo;
-      #$parameter="";
-      $parameter="-int ${b0} ";
-      
-      ###############
-      print "Using B0 correction parameters: ", $parameter, "\n";
-      @outputs = [$initial_file_list{$b0correct_current}];
-      @output_types = qw(b0_correct);
-      @fileID = create_function($program, @inputs, $parameter, @outputs, \@output_types, $type, 'native', '', $list_fileIDs{$crop_current}, (1));
-      $list_fileIDs{$b0correct_current} = $fileID[0];
-           
-    } else {
-      print "Can't get scanner correction field!\n";
-      $initial_file_list{$b0correct_current}=$initial_file_list{$native_current};
-    }
-
     ####################
     ##pipeline correct for each anatomical
     $program = "$bin_dir/pipeline_correct3.pl";
@@ -275,7 +256,6 @@ foreach $type(@types)
     @output_types = qw(nuc_imp nuc_mnc);
     @fileID = create_function($program, @inputs, $parameter, @outputs, \@output_types, $type, 'native', '', $list_fileIDs{$nuc_current}, (1, 1));
     $list_fileIDs{$clp_current} = $fileID[0];
-    print "Output of create_function: $clp_current fileID: $list_fileIDs{$clp_current} \n";
 }
 
 ####################
