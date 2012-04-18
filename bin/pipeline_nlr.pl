@@ -43,10 +43,6 @@ $clobber = 0;
 $dummy = "";
 my $fake=0;
 
-chomp($model         = `pipeline_constants -model_nl`);
-chomp($model_mask    = `pipeline_constants -model_nl_mask`);
-chomp($modeldir      = `pipeline_constants -modeldir_nl`);
-
 my $model_name;
 
 GetOptions(

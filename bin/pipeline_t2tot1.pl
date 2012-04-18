@@ -29,8 +29,6 @@ my $correct_t2w;
 ## The model isn't actually used.  mritoself just uses
 ## the modeldir to find a mask.
 my ($model,$modeldir,$modelfn);
-chomp($model    = `pipeline_constants -model_tal`);
-chomp($modeldir = `pipeline_constants -modeldir_tal`);
 
 
 GetOptions(

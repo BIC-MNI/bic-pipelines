@@ -22,8 +22,8 @@ my $fake=0;
 
 my $me= basename($0);
 # ======= Global variables =======
-chomp(my $modelDir = `pipeline_constants -modeldir_nl`);
-chomp(my $model =    `pipeline_constants -model_nl`);
+my $modelDir ;
+my $model;
 my ($input_mnc, $input_xfm, $output, $basename);
 my ($help, $usage);
 

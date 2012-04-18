@@ -45,9 +45,6 @@ my @files_to_add_to_db = ();
 #########################
 ##models are standard models. This will be changed once age
 ##appropriate models are discovered.
-chomp($model    = `pipeline_constants -model_tal`);
-chomp($modeldir = `pipeline_constants -modeldir_tal`);
-
 
 GetOptions(
 	   'verbose' => \$verbose,

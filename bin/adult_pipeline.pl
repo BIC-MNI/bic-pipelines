@@ -146,56 +146,15 @@ print "CandID: ", $candid, " Visit:",$visitno,"\n";
 my $age=0;
 
 my @types, my $native_t1_ID, my $native_t2_ID, my $native_pd_ID;
-if(!$disable_db) 
-{
-	# Get the file ID's and list of scan types to process.
-	my $file = NeuroDB::File->new(\$dbh);
-	if ($native_t1w) { 
-	    $native_t1_ID = $file->findFile($native_t1w);
-	    print "T1: ", $native_t1w, " has fileID ", $native_t1_ID, "\n"; 
-	    push @types, 't1w';
-      
-      ($geo_t1,$b0_t1)=find_geo_corr($native_t1_ID,'t1w') unless $nogeo || $disable_db || $geo_t1 || !$native_t1_ID;
-	} else {
-	    print "No T1\n"; 
-	}
-  
-	if ($native_t2w) { 
-	    $native_t2_ID = $file->findFile($native_t2w);
-	    print "T2: ", $native_t2w, " has fileID ", $native_t2_ID, "\n"; 
-      ($geo_t2pd,$b0_t2)=find_geo_corr($native_t2_ID,'t2w') unless $nogeo || $disable_db || $geo_t2pd || !$native_t2_ID;
-	    push @types, 't2w';
-	} else { 
-	    print "No T2\n"; 
-	}
 
-  if ($native_pdw) { 
-	    $native_pd_ID = $file->findFile($native_pdw);
-	    print "PD: ", $native_pdw, " has fileID ", $native_pd_ID, "\n"; 
-	    push @types, 'pdw';
-      my $dummy;
-      ($dummy,$b0_t1)=find_geo_corr($native_pd_ID,'pdw') unless $nogeo || $disable_db || $geo_t2pd || !$native_pd_ID;
+push @types,'t1w' if $native_t1w ;
+push @types,'t2w' if $native_t2w ;
+push @types,'pdw' if $native_pdw ;
 
-	} else { 
-	    print "No PD\n"; 
-	}
-  
-  $fallback=IsFallbackScan($native_t1w);
-  if($fallback)
-  {
-      warn "This is a fallback scan!\n";
-      $nogeo=1;
-  }
-} else {
-  push @types,'t1w' if $native_t1w ;
-  push @types,'t2w' if $native_t2w ;
-  push @types,'pdw' if $native_pdw ;
-  
-	$native_t1_ID=-1;
-	$native_t2_ID=-1;
-	$native_pd_ID=-1;
-	warn "DB disabled!\n";
-}
+$native_t1_ID=-1;
+$native_t2_ID=-1;
+$native_pd_ID=-1;
+
 create_directories($base_dir);
 my $tmpdir = &tempdir( "$me-XXXXXXXX", TMPDIR => 1, CLEANUP => 1 );
 if($benchmark)
@@ -233,7 +192,7 @@ foreach $type(@types)
     my $native_file_ID;
     my $native_current = "native_$type";
     my $crop_current = "crop_$type";
-    my $b0correct_current = "b0correct_$type";
+    #my $b0correct_current = "b0correct_$type";
     my $nuc_current = "nuc_$type";
     my $nuc_imp_current = "nuc_imp_$type";
     my $clp_current = "clp_$type";
@@ -249,7 +208,7 @@ foreach $type(@types)
     ####################
     ##pipeline correct for each anatomical
     $program = "$bin_dir/pipeline_correct.pl";
-    @inputs = [$initial_file_list{$b0correct_current}];
+    @inputs = [$initial_file_list{$native_current}];
     $parameter = "--iterations ${nu_runs} --model ${model_dir}/${model_spec}.mnc --model-mask ${model_dir}/${model}_mask.mnc --stx --verbose";
     $parameter.= ' --3t' if $mri_3t;
     @outputs = [$initial_file_list{$clp_current}];
@@ -770,7 +729,6 @@ sub create_function
     $program_string = "$program_string $parameters";
 
     print "******** $program_string *********\n\n";
-    print "Source FileID's: $source\n";
 
     my $processing_needed = 0;
 
@@ -804,33 +762,12 @@ sub create_function
 			$processing_needed=1;
 			 print "\t\tDoes not exist.\n";
 		}
-		if( $delete_file_needed ) # ok, let's delete the file....
-		{
-			  print 'delete_mri -force ${filename}\n' if $dry_run;
-		    `delete_mri -force $filename` unless $disable_db || !$update_db || $dry_run;
-		    do_cmd('rm','-f',$filename) unless $dry_run;
-			  print 'rm -f ${filename}\n' if $dry_run; 
-		    $filename=$outfile; #to make sure we are not trying to create a file with .gz ext
-		}
 		if( !$processing_needed ) 
     {
       # If the outfile already exists, get its fileID from the database
       # since we are still expected to return this value.
-      if($disable_db) {
-        $outfileIDList[$i]=-1;
-      } else {
-        if($force_update_db)
-        {
-          do_cmd('delete_mri','-force',$filename) unless $dry_run;
-          print 'delete_mri -force ${filename}\n' if $dry_run;
-          push(@output_list,$filename);
-          $outfileIDList[$i] = 0;
-        } else {
-          my $file = NeuroDB::File->new(\$dbh);
-          $outfileIDList[$i] = $file->findFile($filename);
-        }
-      # If we found the file in the db, don't try to add it again.
-      }
+      $outfileIDList[$i]=-1;
+      
       if ( $outfileIDList[$i] && $outfileIDList[$i]>0 ) 
       {
         $addToDB[$i] = 0;
@@ -877,41 +814,8 @@ sub create_function
     }
 		++ $index;
 		$outfileIDList[$index] = -1;
-			
-		###############################
-		# FOR TESTING LIVING PHANTOM ##
-		#$addToDB[$index] = 0 if $disable_db;
-		###############################
-
-		if ( $addToDB[$index] && !$disable_db && $update_db) 
-		{
-			my ($dbresults,$line);
-			my $output_type = $$output_types_ref[$index];
-	
-			@insert_args = ('register_minc_db',$file,$output_type, '-pipeline', 'v1.3' );
-			
-			if($protocal)          { push(@insert_args, '-protocol', $protocal); }
-			if($coordinate_space)  { push(@insert_args, '-coordspace', $coordinate_space); }
-			if($classify_algorithm){ push(@insert_args, '-classifyalg', $classify_algorithm); }
-			if($source)            { push(@insert_args, '-source', $source); }
-      
-			$line = join(" ",  @insert_args);
-			print("\n\ninsert_line:$line\n\n");
-			my $dbresults;
-			$dbresults = `$line` unless $dry_run;
-			print "DBResults: ", $dbresults;
-			my ($d,$newfileID) = split("Registered with FileID: ", $dbresults);
-			chomp($newfileID);
-			if( $newfileID )  
-      {
-				$outfileIDList[$index] = $newfileID;
-			} else {
-				warn "No fileID returned from register_minc_db.  Using ancestor's source IDs\n";
-				$outfileIDList[$index] = $source;
-			}
-			print "FileID returned by register_minc_db: ",$outfileIDList[$index], "\n"; 
-		}
 	}
+	
   return @outfileIDList;
 }
 

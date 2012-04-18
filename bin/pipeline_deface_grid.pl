@@ -36,9 +36,7 @@ my $keep_tmp=0;
 my @files_to_add_to_db = ();
 
 my ($face_mask,$model_dir);
-chomp($model_dir    = `pipeline_constants -modeldir_tal`);
-chomp($face_mask    = `pipeline_constants -face_mask_lr`);
-my $face=$model_dir.'/'.$face_mask;
+my $face;
 
 GetOptions(
 	   'verbose' => \$verbose,

@@ -37,10 +37,7 @@ my ($model, $modeldir);
 my $nuyl=0;
 my $denoise=0;
 my $noise=0;
-
-chomp($model    = `pipeline_constants -model_tal`);
-chomp($modeldir = `pipeline_constants -modeldir_tal`);
-my $modelfn     = "$modeldir/$model.mnc";
+my $modelfn;
 
 GetOptions(
 	   'verbose' => \$verbose,

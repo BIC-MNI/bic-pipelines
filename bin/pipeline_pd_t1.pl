@@ -24,10 +24,6 @@ $clobber = 0;
 
 my ($model,$modeldir,$modelfn);
 
-##get models from constants file
-chomp($model    = `pipeline_constants -model_tal`);
-chomp($modeldir = `pipeline_constants -modeldir_tal`);
-
 GetOptions(
 	   'verbose' => \$verbose,
 	   'clobber' => \$clobber,
