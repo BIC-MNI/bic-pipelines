@@ -17,13 +17,20 @@ my $clobber = 0;
 my $dummy = "";
 my $model_eye_mask;
 my $fake    = 0;
+my $nlmask  = 0;
+my $model;
+my $icc_model;
+
 GetOptions(
 	   'verbose'    => \$verbose,
 	   'clobber'    => \$clobber,
      'eye_mask=s' => \$model_eye_mask,
+     'nlmask'     => \$nlmask,
+     'model=s'    => \$model,
+     'icc_model=s' => \$icc_model,
 	   );
 
-if ($#ARGV < 1){ die "Usage: $me <infile_t1> [infilet2] [infilepd] <outfile_mnc> [--eye_mask <eye_mask>]\n"; }
+if ($#ARGV < 1){ die "Usage: $me <infile_t1> [infilet2] [infilepd] <outfile_mnc> [--eye_mask <eye_mask>] [--nlmask --model model_t1.mnc ---icc_model model_icc.mnc]\n"; }
 
 #####################
 ##infile includes the tal transformed anatomical data
@@ -42,25 +49,15 @@ do_cmd('minccalc','-express','clamp(A[0],0,100)',$ARGV[0],"$tmpdir/t1.mnc");
 my $i;
 my $j=0;
 
-#if($#ARGV > 1)
-#{
-  # we are trying to get ICC mask
-#  do_cmd('mincaverage',@ARGV,"$tmpdir/avg.mnc");
-  #do_cmd('imp_bet.pl', "$tmpdir/avg.mnc", "$tmpdir/mri_mask.mnc");
-#  do_cmd('mincbet', "$tmpdir/avg.mnc", "$tmpdir/mri",'-m','-n','-h',1.15);
-#} else {
-  #do_cmd('imp_bet.pl', $ARGV[0], "$tmpdir/mri_mask.mnc");
-  do_cmd('mincbet', "$tmpdir/t1.mnc", "$tmpdir/mri",'-m','-n');
-#}
+if($nlmask) {
+  do_cmd('icc_mask.pl',"$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc",'--model',$model,'--icc-model',$icc_model);
+} else {
+  do_cmd('mincbeast', "$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc");
+}
 
 if($model_eye_mask )#&& $#ARGV > 1
 {
   do_cmd('mincresample','-like',"$tmpdir/mri_mask.mnc",$model_eye_mask,"$tmpdir/eye_mask.mnc");
-  #correct EYE mask using T1w modality
-  #do_cmd('imp_bet.pl', $ARGV[0], "$tmpdir/t1_mask.mnc");
-  #do_cmd('mincbet', $ARGV[0], "$tmpdir/t1",'-m','-n','-h',1.15);
-  #do_cmd('minccalc', '-expression','A[1]<=0.5?A[0]:0',"$tmpdir/eye_mask.mnc","$tmpdir/t1_mask.mnc","$tmpdir/eye_custom.mnc");
-  #do_cmd('minccalc', '-expression','(A[0]>0.5 && A[1]<=0.5)?1:0',"$tmpdir/mri_mask.mnc" ,"$tmpdir/eye_custom.mnc", $outfile_mnc, '-clobber','-byte');
   do_cmd('minccalc', '-expression','(A[0]>0.5 && A[1]<=0.5)?1:0',"$tmpdir/mri_mask.mnc" ,"$tmpdir/eye_mask.mnc", $outfile_mnc, '-clobber','-byte');
 } else {
   do_cmd('mincreshape',"$tmpdir/mri_mask.mnc",$outfile_mnc,'-byte','-clobber');

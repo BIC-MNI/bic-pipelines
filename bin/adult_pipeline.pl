@@ -277,7 +277,7 @@ $list_fileIDs{'tal_t1w'} = $fileID[1];
 ##linear register t2 (storing the t2-to-Talairach space transform and NOT the t2-to-t1 xform)
 if($native_t2w)
 {
-  $program = "$bin_dir/pipeline_t2tot1_3.pl";
+  $program = "$bin_dir/pipeline_t2tot1.pl";
   @inputs = [$initial_file_list{'tal_xfm_t1w'}, $initial_file_list{'clp_t1w'},$initial_file_list{'clp_t2w'}];
   $parameter = " --model_dir ${model_dir} --model_name ${model}  ";  
   $parameter=$parameter." --correct_t2w $geo_t2pd " if $geo_t2pd;
@@ -304,7 +304,7 @@ if($native_t2w && $native_pdw)
 
 ###################
 ## Transform clamped T1 to Talairach without scaling.
-$program = "$bin_dir/pipeline_talnoscale3.pl";
+$program = "$bin_dir/pipeline_talnoscale.pl";
 @inputs = [$initial_file_list{'clp_t1w'}, $initial_file_list{'tal_xfm_t1w'}];
 $parameter = " --model_dir ${model_dir} --model_name ${model} ";
 @outputs =  [$initial_file_list{'tal_noscale_xfm_t1w'}, $initial_file_list{'tal_noscale_t1w'}];
@@ -317,7 +317,7 @@ $list_fileIDs{'tal_noscale_t1w'} = $fileID[1];
 ## Transform clamped T2 to Talairach without scaling.
 if($native_t2w)
 {
-  $program = "$bin_dir/pipeline_talnoscale3.pl";
+  $program = "$bin_dir/pipeline_talnoscale.pl";
   @inputs = [$initial_file_list{'clp_t2w'}, $initial_file_list{'tal_xfm_t2w'}];
   $parameter = " --model_dir ${model_dir} --model_name ${model} ";
   @outputs =  [$initial_file_list{'tal_noscale_xfm_t2w'}, $initial_file_list{'tal_noscale_t2w'}];
@@ -330,7 +330,7 @@ if($native_t2w)
 ## Transform clamped PD to Talairach without scaling.
 if($native_pdw)
 {
-  $program = "$bin_dir/pipeline_talnoscale3.pl";
+  $program = "$bin_dir/pipeline_talnoscale.pl";
   @inputs = [$initial_file_list{'clp_pdw'}, $initial_file_list{'tal_xfm_t2w'}];
   $parameter = " --model_dir ${model_dir} --model_name ${model}  ";
   @outputs =  [$initial_file_list{'tal_noscale_xfm_pdw'}, $initial_file_list{'tal_noscale_pdw'}];
@@ -342,7 +342,7 @@ if($native_pdw)
 
 ###################
 ##create linear mask
-$program = "$bin_dir/pipeline_iccmask_stx5.pl";
+$program = "$bin_dir/pipeline_iccmask_stx.pl";
 @inputs = ($initial_file_list{'tal_t1w'} );
 push (@inputs, $initial_file_list{'tal_t2w'}) if $native_t2w;
 push (@inputs, $initial_file_list{'tal_pdw'}) if $native_pdw;
@@ -367,7 +367,7 @@ unless($disable_nonlinear)
 {
   ###################
   ##non linear register all three anatomicals
-  $program = "$bin_dir/pipeline_nlr3.pl ";
+  $program = "$bin_dir/pipeline_nlr.pl ";
   @inputs = [$initial_file_list{'tal_t1w'},$initial_file_list{'tal_comp_msk'}];
   $parameter = " --model_dir ${model_dir} --model_name ${model}";
   @outputs = [$initial_file_list{'nl_grid'}, $initial_file_list{'nl_xfm'}, $initial_file_list{'nl_t1w'}];
@@ -394,7 +394,7 @@ unless($disable_nonlinear)
 #$clobber=1;
 ##########################
 ##linear classifications
-$program = "$bin_dir/pipeline_classify3.pl";
+$program = "$bin_dir/pipeline_classify.pl";
 @inputs = ($initial_file_list{'tal_t1w'} );
 push @inputs, $initial_file_list{'tal_t2w'} if $native_t2w;
 push @inputs, $initial_file_list{'tal_pdw'} if $native_pdw;
@@ -411,7 +411,7 @@ $list_fileIDs{'tal_clean'} = $fileID[0];
 #$clobber=1;
 ##########################
 ##linear segmentations
-$program = "$bin_dir/pipeline_segment2.pl";
+$program = "$bin_dir/pipeline_segment.pl";
 @inputs = [$initial_file_list{'tal_clean'}, $identity_file, $identity_file];
 $parameter = " --model-dir ${model_dir} --template ${model}";
 @outputs = [$initial_file_list{'tal_clean_lobe'}];
@@ -422,7 +422,7 @@ $list_fileIDs{'tal_clean_lobe'} = $fileID[0];
 
 #########################
 ##VBM
-$program = "$bin_dir/pipeline_smooth2.pl";
+$program = "$bin_dir/pipeline_smooth.pl";
 @inputs = [$initial_file_list{'tal_clean'}];
 $parameter = "";
 @outputs = [$initial_file_list{'tal_clean_wm'},$initial_file_list{'tal_clean_gm'},$initial_file_list{'tal_clean_csf'}];
@@ -435,7 +435,7 @@ $list_fileIDs{'tal_clean_csf'} = $fileID[2];
 
 unless($disable_nonlinear)
 {
-  $program = "$bin_dir/pipeline_smooth2.pl";
+  $program = "$bin_dir/pipeline_smooth.pl";
   @inputs = [$initial_file_list{'tal_clean'}];
   $parameter = "--xfm $initial_file_list{'nl_xfm'}";
   @outputs = [$initial_file_list{'modulated_wm'}, $initial_file_list{'modulated_gm'}, $initial_file_list{'modulated_csf'}];
@@ -455,7 +455,7 @@ unless($disable_nonlinear)
 
 
   #$clobber=1;
-  $program = "$bin_dir/pipeline_segment2.pl";
+  $program = "$bin_dir/pipeline_segment.pl";
   @inputs = [$initial_file_list{'tal_clean'}, $identity_file, $initial_file_list{'nl_xfm'}];
   $parameter = " --model-dir ${model_dir} --template ${model} --verbose ";
   @outputs = [$initial_file_list{'nl_clean_lobe'}];
@@ -517,7 +517,7 @@ unless($disable_nonlinear) {
   #$clobber=1;
   #########################
   # nonlinar quality-control
-  $program = "$bin_dir/pipeline_qc_nl2.pl";
+  $program = "$bin_dir/pipeline_qc_nl.pl";
   @inputs = [$initial_file_list{'tal_t1w'}, $initial_file_list{'tal_clean'}, $initial_file_list{'nl_clean_lobe'}];
   $parameter = "$candid $visitno $age";
   @outputs = [$initial_file_list{'qc_tal_lc_clean'}, $initial_file_list{'qc_nl_segment_lobe'}];
@@ -530,7 +530,7 @@ unless($disable_nonlinear) {
 
 unless($disable_nonlinear)
 {
-  $program = "$bin_dir/pipeline_volumes_original2.pl";
+  $program = "$bin_dir/pipeline_volumes_nl.pl";
   @outputs = [$initial_file_list{'nl_volumes'}];
   #@output_types = qw(clean_volumes);
   @inputs = [$initial_file_list{'tal_comp_msk'}, $initial_file_list{'tal_clean'}, $initial_file_list{'nl_clean_lobe'}, $initial_file_list{'tal_xfm_t1w'} ];
@@ -543,7 +543,7 @@ unless($disable_nonlinear)
   @output_types = qw(nl_volumes);
   @fileID = create_function($program, @inputs, $parameter, @outputs,  \@output_types, '', 'nonlinear', 'clean', "$list_fileIDs{'tal_clean'}", (1));
 } else {
-  $program = "$bin_dir/pipeline_volumes_linear.pl";
+  $program = "$bin_dir/pipeline_volumes_lin.pl";
   @outputs = [$initial_file_list{'tal_volumes'}];
   #@output_types = qw(clean_volumes);
   @inputs = [$initial_file_list{'tal_comp_msk'}, $initial_file_list{'tal_clean'}, $initial_file_list{'tal_xfm_t1w'} ];
@@ -594,7 +594,6 @@ if($benchmark)
   close BENCHMARK;
   
 }
-
 
 sub GetSelectedScanID
 {

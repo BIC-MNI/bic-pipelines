@@ -4,8 +4,6 @@ use strict;
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use File::Path;
-#use NeuroDB::File ;
-#use NeuroDB::DBI;
 use Candidate;
 use Getopt::Long;       
 use pipeline_functions;
@@ -21,18 +19,17 @@ GetOptions(
 	   'clobber' => \$clobber
 	   );
 
-die "Program usage: ${me} <tal_t1w> <lc_clean> <nonlinear_segment> <nonlinear_segment_lobe> <candID> <visit label> <age> <out_lc_clean> <out_nl_segment> <out_nl_segment_lobe>" if $#ARGV < 6 ;
+die "Program usage: ${me} <tal_t1w> <lc_clean> <nonlinear_segment_lobe> <candID> <visit label> <age> <out_lc_clean> <out_nl_segment_lobe>" if $#ARGV < 6 ;
 
-my ($tal_t1w,$lc_clean,$nonlinear_segment,$nonlinear_segment_lobe,$candID,$VisitLabel,$age,$t1w_lc_clean_img,$nl_t1w_segment_img,$nl_t1w_segment_lobe_img) = @ARGV;
+my ($tal_t1w, $lc_clean, $nonlinear_segment_lobe, $candID, $VisitLabel, $age, $t1w_lc_clean_img, $nl_t1w_segment_lobe_img) = @ARGV;
 my @files_to_add_to_db;
 
 
     my $base_dir = "/data/nihpd/nihpd1/data/mri_processing/1.1/subjects/${candID}/${VisitLabel}";
     
-    die if (!$tal_t1w)  || (! -e $tal_t1w);
-    die if (!$lc_clean) || (! -e $lc_clean);
-    die if (!$nonlinear_segment) || (! -e $nonlinear_segment);
-    die if (!$nonlinear_segment_lobe) || (! -e $nonlinear_segment_lobe);
+    die "$tal_t1w does not exists!" if (!$tal_t1w)  || (! -e $tal_t1w);
+    die "$lc_clean does not exists!" if (!$lc_clean) || (! -e $lc_clean);
+    die "$nonlinear_segment_lobe does not exists!" if (!$nonlinear_segment_lobe) || (! -e $nonlinear_segment_lobe);
 
     
     # make tmpdir
@@ -42,7 +39,6 @@ my @files_to_add_to_db;
         
     if ( (!-e $t1w_lc_clean_img) || $clobber) {
 	if(-e $t1w_lc_clean_img) {
-	    &do_cmd("delete_mri","--force",$t1w_lc_clean_img);
 	    &do_cmd("rm","-f",$t1w_lc_clean_img);
 	}
 
@@ -51,49 +47,29 @@ $lc_clean="${tmpdir}/lc_clean_resample.mnc";
 
     #   make overlayed lc_clean and tal_t1w    
         &do_cmd('minclookup','-clobb','-grey'    ,$tal_t1w , "${tmpdir}/t1w.mnc");
-        &do_cmd('minclookup','-clobb','-spectral',$lc_clean, "${tmpdir}/lc_clean.mnc");
+        &do_cmd('minclookup','-clobb','-spectral',$lc_clean, "${tmpdir}/lc_clean.mnc", '-range', 0, 3.5);
         &do_cmd('mincmath','-clobb','-max','-nocheck_dimensions',"${tmpdir}/t1w.mnc","${tmpdir}/lc_clean.mnc","${tmpdir}/t1w_lc_clean.mnc");
         make_multipane($tmpdir,"${tmpdir}/t1w_lc_clean.mnc","lc_clean ".$imagelabel,$t1w_lc_clean_img);
-#        &do_cmd("register_minc_db",$t1w_lc_clean_img,"qc_tal_t1w_lc_clean","-pipeline","v1.1","-coordspace","linear","-source",$lc_clean_id);
 	@files_to_add_to_db = (@files_to_add_to_db, $t1w_lc_clean_img);
     }
     
-    if( (!-e $nl_t1w_segment_img) || $clobber) {
-	if(-e $nl_t1w_segment_img) {
-	    &do_cmd("delete_mri","--force",$nl_t1w_segment_img);
-	    &do_cmd("rm","-f",$nl_t1w_segment_img);
-	}
-    #   make overlayed tal_t1w and nonlinear_segment
-
-&do_cmd('mincresample','-nearest','-like',$tal_t1w,$nonlinear_segment,"${tmpdir}/nonlinear_segment_resample.mnc");
-$nonlinear_segment="${tmpdir}/nonlinear_segment_resample.mnc";
-
-	&do_cmd('minclookup','-clobb','-grey'    ,$tal_t1w , "${tmpdir}/t1w.mnc") unless -e "${tmpdir}/t1w.mnc";
-	&do_cmd('minclookup','-clobb','-spectral',$nonlinear_segment, "${tmpdir}/nonlinear_segment.mnc");
-	&do_cmd('mincmath','-clobb','-max','-nocheck_dimensions',"${tmpdir}/t1w.mnc","${tmpdir}/nonlinear_segment.mnc","${tmpdir}/nlr_t1w_segment.mnc");
-	make_multipane($tmpdir,"${tmpdir}/nlr_t1w_segment.mnc","nlr_segment ".$imagelabel,$nl_t1w_segment_img);
-#        &do_cmd("register_minc_db",$nl_t1w_segment_img,"qc_nl_t1w_segment","-pipeline","v1.1","-coordspace","nonlinear","-source",$nonlinear_segment_id);    
-	@files_to_add_to_db = (@files_to_add_to_db, $nl_t1w_segment_img);
-    }
-    
     if( (!-e $nl_t1w_segment_lobe_img) || $clobber) {
-	if(-e $nl_t1w_segment_lobe_img ) {
-	    &do_cmd("delete_mri","--force",$nl_t1w_segment_lobe_img);
-	    &do_cmd("rm","-f",$nl_t1w_segment_lobe_img);
+		if(-e $nl_t1w_segment_lobe_img ) {
+			&do_cmd("rm","-f",$nl_t1w_segment_lobe_img);
+		}
+	
+	&do_cmd('mincresample','-nearest','-like',$tal_t1w,$nonlinear_segment_lobe,"${tmpdir}/nonlinear_segment_lobe_resample.mnc");
+	$nonlinear_segment_lobe="${tmpdir}/nonlinear_segment_lobe_resample.mnc";
+	
+		#   make overlayed t1w and nonlinear_segment_lobe
+		&do_cmd('minclookup','-clobb','-grey'    ,$tal_t1w , "${tmpdir}/t1w.mnc") unless -e "${tmpdir}/t1w.mnc";
+		&do_cmd('minclookup','-clobb','-spectral',$nonlinear_segment_lobe, "${tmpdir}/nonlinear_segment_lobe.mnc");
+		&do_cmd('mincmath','-clobb','-max','-nocheck_dimensions',"${tmpdir}/t1w.mnc","${tmpdir}/nonlinear_segment_lobe.mnc","${tmpdir}/nlr_t1w_segment_lobe.mnc");
+		make_multipane($tmpdir,"${tmpdir}/nlr_t1w_segment_lobe.mnc","nlr_segment_lobe ".$imagelabel,$nl_t1w_segment_lobe_img);
+	#       &do_cmd("register_minc_db",$nl_t1w_segment_lobe_img,"qc_nl_t1w_segment_lobe","-pipeline","v1.1","-coordspace","nonlinear","-source",$nonlinear_segment_lobe_id); 
+		@files_to_add_to_db = (@files_to_add_to_db,$nl_t1w_segment_lobe_img);
 	}
-
-&do_cmd('mincresample','-nearest','-like',$tal_t1w,$nonlinear_segment_lobe,"${tmpdir}/nonlinear_segment_lobe_resample.mnc");
-$nonlinear_segment_lobe="${tmpdir}/nonlinear_segment_lobe_resample.mnc";
-
-    #   make overlayed t1w and nonlinear_segment_lobe
-	&do_cmd('minclookup','-clobb','-grey'    ,$tal_t1w , "${tmpdir}/t1w.mnc") unless -e "${tmpdir}/t1w.mnc";
-	&do_cmd('minclookup','-clobb','-spectral',$nonlinear_segment_lobe, "${tmpdir}/nonlinear_segment_lobe.mnc");
-	&do_cmd('mincmath','-clobb','-max','-nocheck_dimensions',"${tmpdir}/t1w.mnc","${tmpdir}/nonlinear_segment_lobe.mnc","${tmpdir}/nlr_t1w_segment_lobe.mnc");
-	make_multipane($tmpdir,"${tmpdir}/nlr_t1w_segment_lobe.mnc","nlr_segment_lobe ".$imagelabel,$nl_t1w_segment_lobe_img);
-#       &do_cmd("register_minc_db",$nl_t1w_segment_lobe_img,"qc_nl_t1w_segment_lobe","-pipeline","v1.1","-coordspace","nonlinear","-source",$nonlinear_segment_lobe_id); 
-	@files_to_add_to_db = (@files_to_add_to_db,$nl_t1w_segment_lobe_img);
-}
-
+	
 print("Files created:@files_to_add_to_db\n");
 
     
