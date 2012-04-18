@@ -248,7 +248,7 @@ foreach $type(@types)
 
     ####################
     ##pipeline correct for each anatomical
-    $program = "$bin_dir/pipeline_correct3.pl";
+    $program = "$bin_dir/pipeline_correct.pl";
     @inputs = [$initial_file_list{$b0correct_current}];
     $parameter = "--iterations ${nu_runs} --model ${model_dir}/${model_spec}.mnc --model-mask ${model_dir}/${model}_mask.mnc --stx --verbose";
     $parameter.= ' --3t' if $mri_3t;
@@ -262,7 +262,7 @@ foreach $type(@types)
 ##linear register t1
 
 #do_cmd('ln','-s',$manual_file_list{'tal_xfm_t1w'},$initial_file_list{'tal_xfm_t1w'}) if $manual_dir && -e $manual_file_list{'tal_xfm_t1w'};
-$program = "$bin_dir/pipeline_mritotal4.pl";
+$program = "$bin_dir/pipeline_mritotal.pl";
 @inputs = [$initial_file_list{'clp_t1w'}];
 $parameter = "--model_dir ${model_dir} --model_name ${model}";
 $parameter = $parameter." --initial $manual_file_list{'tal_xfm_t1w'}" if $manual_dir && -e $manual_file_list{'tal_xfm_t1w'};

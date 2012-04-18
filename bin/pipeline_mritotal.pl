@@ -1,5 +1,19 @@
 #!/usr/bin/env perl
-#
+
+############################# MNI Header #####################################
+#@NAME       :  pipeline_mritotal.pl
+#@DESCRIPTION:  stereotaxic registraton
+#@COPYRIGHT  :
+#              Vladimir S. Fonov  Dec, 2009
+#              Montreal Neurological Institute, McGill University.
+#              Permission to use, copy, modify, and distribute this
+#              software and its documentation for any purpose and without
+#              fee is hereby granted, provided that the above copyright
+#              notice appear in all copies.  The author and McGill University
+#              make no representations about the suitability of this
+#              software for any purpose.  It is provided "as is" without
+#              express or implied warranty.
+###############################################################################
 
 use Getopt::Long;
 use File::Basename;
@@ -123,9 +137,9 @@ if (-e $regxfm && !$clobber) {
     do_cmd('mincresample',$infile,'-like',$modelfn,'-transform',"$tmpdir/tal1.xfm","$tmpdir/tal1.mnc");
     if($nlmask)
     {
-      do_cmd('icc_mask_ants.pl',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc",'--model',$modelfn,'--icc-model',$model_brain_mask);
+      do_cmd('icc_mask.pl',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc",'--model',$modelfn,'--icc-model',$model_brain_mask);
     } else {
-      do_cmd('mincbet',"$tmpdir/tal1.mnc","$tmpdir/tal1",'-m','-n');
+      do_cmd('mincbeast',"$tmpdir/tal1.mnc","$tmpdir/tal1");
     }
     # second stage
     # map back to the input space
@@ -147,7 +161,6 @@ if (-e $regxfm && !$clobber) {
     }
     push @files_to_add_to_db,$regxfm;
 }
-
 
 ##############
 ##finally make the output if none is made

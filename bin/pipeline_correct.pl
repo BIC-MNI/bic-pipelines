@@ -1,15 +1,21 @@
 #!/usr/bin/env perl
-#
-# Matthew Kitching
-# Script based on original work by Andrew Janke.
-# This modified version is used with nihpd database.
-#
-# Andrew Janke - rotor@bic.mni.mcgill.ca
-# Script to int correct data
-#
-# Sun Dec  2 00:48:21 EST 2001 - initial version
-# Sat Feb  9 11:51:43 EST 2002 - much improved
-# May 1, 2002 - mods to apply to NIHPD DB - louis
+
+############################# MNI Header #####################################
+#@NAME       :  pipeline_correct.pl
+#@DESCRIPTION:  initial image correction step
+#@COPYRIGHT  :
+#              Vladimir S. Fonov  April, 2012
+#              Matthew Kitching   Dec, 2002
+#              Andrew Janke       Feb, 2001
+#              Montreal Neurological Institute, McGill University.
+#              Permission to use, copy, modify, and distribute this
+#              software and its documentation for any purpose and without
+#              fee is hereby granted, provided that the above copyright
+#              notice appear in all copies.  The author and McGill University
+#              make no representations about the suitability of this
+#              software for any purpose.  It is provided "as is" without
+#              express or implied warranty.
+###############################################################################
 
 use strict;
 use Getopt::Long;
