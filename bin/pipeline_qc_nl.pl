@@ -4,7 +4,6 @@ use strict;
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use File::Path;
-use Candidate;
 use Getopt::Long;       
 use pipeline_functions;
 
@@ -25,7 +24,6 @@ my ($tal_t1w, $lc_clean, $nonlinear_segment_lobe, $candID, $VisitLabel, $age, $t
 my @files_to_add_to_db;
 
 
-    my $base_dir = "/data/nihpd/nihpd1/data/mri_processing/1.1/subjects/${candID}/${VisitLabel}";
     
     die "$tal_t1w does not exists!" if (!$tal_t1w)  || (! -e $tal_t1w);
     die "$lc_clean does not exists!" if (!$lc_clean) || (! -e $lc_clean);
@@ -42,8 +40,8 @@ my @files_to_add_to_db;
 	    &do_cmd("rm","-f",$t1w_lc_clean_img);
 	}
 
-&do_cmd('mincresample','-nearest','-like',$tal_t1w,$lc_clean,"${tmpdir}/lc_clean_resample.mnc");
-$lc_clean="${tmpdir}/lc_clean_resample.mnc";
+  do_cmd('mincresample','-nearest','-like',$tal_t1w,$lc_clean,"${tmpdir}/lc_clean_resample.mnc");
+  $lc_clean="${tmpdir}/lc_clean_resample.mnc";
 
     #   make overlayed lc_clean and tal_t1w    
         &do_cmd('minclookup','-clobb','-grey'    ,$tal_t1w , "${tmpdir}/t1w.mnc");
