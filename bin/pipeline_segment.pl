@@ -53,7 +53,7 @@ my @files_to_add_to_db = ();
 ##First make the segmentation file
 if (!( -e $outfile_lob) || $clobber )
 {
-    my @args = ('lobe_segment', $infile_nl_xfm, $infile_lin_xfm,	   
+    my @args = ('lobe_segment.pl', $infile_nl_xfm, $infile_lin_xfm,	   
       $infile_cls, $outfile_lob);
 
     if($clobber) { push(@args, '-clobber'); }

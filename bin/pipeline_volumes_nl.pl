@@ -175,7 +175,7 @@ foreach $line(@results) {
     print OUTFILE_VOLUMES "$classifyLabels[$labelIndex] $value\n";
 }
 
-@results = split(/\n/, `lobes_to_volumes ${infile_lobes} --xfm $infile_xfm`);
+@results = split(/\n/, `lobes_to_volumes.pl ${infile_lobes} --xfm $infile_xfm`);
 foreach $line(@results) {
 	chomp $line;
 	print OUTFILE_VOLUMES "$line\n";

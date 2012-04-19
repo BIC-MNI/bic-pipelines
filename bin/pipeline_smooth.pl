@@ -58,7 +58,8 @@ my @files_to_add_to_db = ();
 if($xfm)
 {
   do_cmd('xfm_normalize.pl',$xfm,'--like',$infile_cls,'--exact',"$tmpdir/nl.xfm");
-  do_cmd('grid_proc','--det',"$tmpdir/nl_grid_0.mnc","$tmpdir/jacobian.mnc");
+  do_cmd('mincreshape','-dimorder','vector_dimension,xspace,yspace,zspace',"$tmpdir/nl_grid_0.mnc","$tmpdir/nl_grid_0_.mnc");
+  do_cmd('mincblob','-determinant',"$tmpdir/nl_grid_0_.mnc","$tmpdir/jacobian.mnc");
 
   resample_modulate($infile_cls,1 ,$xfm,"$tmpdir/jacobian.mnc","$tmpdir/nl_csf.mnc");
   resample_modulate($infile_cls,3 ,$xfm,"$tmpdir/jacobian.mnc","$tmpdir/nl_wm.mnc");
@@ -74,7 +75,8 @@ if($xfm)
   {
     delete $ENV{MINC_COMPRESS}  if $compress;
     do_cmd('xfm_normalize.pl',$xfm,'--like',$infile_cls,"$tmpdir/inl.xfm",'--step',2,'--invert');
-    do_cmd('grid_proc','--det',"$tmpdir/inl_grid_0.mnc","$tmpdir/inl_grid_det.mnc");
+    do_cmd('mincreshape','-dimorder','vector_dimension,xspace,yspace,zspace',"$tmpdir/inl_grid_0.mnc","$tmpdir/inl_grid_0_.mnc");
+    do_cmd('mincblob','-determinant',"$tmpdir/inl_grid_0_.mnc","$tmpdir/inl_grid_det.mnc");
     $ENV{MINC_COMPRESS}=$compress if $compress;
     do_cmd('mincreshape','-short',"$tmpdir/inl_grid_det.mnc",$outfile_j,'-clob');
     @files_to_add_to_db = (@files_to_add_to_db, $outfile_j);
@@ -121,7 +123,7 @@ sub resample_modulate {
 sub do_cmd { 
     print STDOUT "@_\n" if $verbose;
     if(!$fake){
-	system(@_) == 0 or die "DIED: @_\n";
+      system(@_) == 0 or die "DIED: @_\n";
     }
 }
 

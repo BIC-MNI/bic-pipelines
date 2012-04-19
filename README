@@ -13,12 +13,77 @@ Installation
 All pipelines are written in high-level scripting language (Perl,Python or Ruby) 
 and require complete installation of minc-toolkit  ( https://github.com/vfonov/minc-toolkit )
 
-TODO: Finish this
+installation consist of copying all scripts into the same directory, and setting PATH and PERL5LIB to include this directiry
+
+MNI_DATADIR should point to the location of icbm152_model_09c ( or specify location of the models in the command line)
 
 
 Usage
 --------------
+Pipeline processes a dataset with one T1w scan and (optionally) one T2w and PDw scans acquired using
+dual echo sequnce (i.e t2w and pdw scans are expected to be co-registered)
 
 
+to start:
 
+standard_pipeline.pl <subject id> <visit id> \
+ <path to T1w scan> \
+ [path to T2w scan] \
+ [path to T2w scan] \
+ [ --prefix <output prefix> ]
+ [ --model_dir <location of anatomical models> ]
+ [ --model <name of the anatomical model (default mni_icbm152_t1_tal_nlin_sym_09c) ]
+ 
+Will create subdirectory structure in 
+<output prefix> :
+
+<ID> specifies subject ID ( any sequence of characters, without spaces), <Visit> - visit label (for example V1 V2 etc.)
+<T1 file> - file name of T1 scan
+[T2 file] - optional T2 scan
+[PD file] - optional PD scan
+<directory> - base directory where all results will be placed. The pipeline script will create subdirectory <directory>/<ID>/<Visit>/ ....
+and will put all files there:
+
+./clp - intensity normalization (map all values to the 0-100 range approxiately)
+./clp/clamp_<ID>_<Visit>_t1w.mnc t1w scan
+./clp/clamp_<ID>_<Visit>_t2w.mnc t2w scan (if present)
+./clp/clamp_<ID>_<Visit>_pdw.mnc pdw scan (if present)
+
+./tal - registration in stereotaxic space
+./tal/tal_xfm_<ID>_<Visit>_t1w.xfm - registration parameters for t1w
+./tal/tal_xfm_<ID>_<Visit>_t2w.xfm - registration parameters for t2w/pdw (if present)
+./tal/tal_<ID>_<Visit>_t1w.mnc  - t1w scan in the stereotaxic space
+./tal/tal_<ID>_<Visit>_t2w.mnc  - t2w scan in the stereotaxic space
+./tal/tal_<ID>_<Visit>_pdw.mnc  - pdw scan in the stereotaxic space
+./tal/tal_noscale_xfm_<ID>_<Visit>_t1w.xfm - registration parameters fot t1w without scaling
+./tal/tal_noscale_xfm_<ID>_<Visit>_t2w.xfm - registration parameters fot t2w without scaling
+./tal/tal_noscale_xfm_<ID>_<Visit>_pdw.xfm - registration parameters fot pdw without scaling
+./tal/tal_noscale_<ID>_<Visit>_t1w.mnc - t1w scan in stereotaxic space, unscaled
+./tal/tal_noscale_<ID>_<Visit>_t2w.mnc - t1w scan in stereotaxic space, unscaled
+./tal/tal_noscale_<ID>_<Visit>_pdw.mnc - t1w scan in stereotaxic space, unscaled
+./tal/tal_comp_msk_<ID>_<Visit>.mnc - brain mask 
+
+./nl - nonlinear registration into sterotaxic space
+./nl/nl_xfm_<ID>_<Visit>.xfm - registration parameters
+./nl/nl_xfm_<ID>_<Visit>_grid_0.mnc
+./nl/nl_<ID>_<Visit>_t1w.mnc - scan nonlinearly registered into stereotaxic space
+./nl/nl_jacobian_<ID>_<Visit>.mnc - jacobian determinant map of the nonlinear part of transformation
+
+./tal_cls  - tissue classification using linear registration into sterotaxic space
+./tal_cls/tal_clean_<ID>_<Visit>.mnc - tissue map
+
+./lob  - brain segmentation
+./lob/tal_clean_lob_<ID>_<Visit>.mnc - brain segmentation using linear registration 
+./lob/nl_clean_lob_<ID>_<Visit>.mnc  - brain segmentation using nonlinear registration (more precise)
+
+./qc  - Quality Control Images
+./qc/qc_face_<ID>_<Visit>.jpg - face rendering
+./qc/qc_t1w_<ID>_<Visit>.jpg  - head with stx target outline (linear registration)
+./qc/qc_tal_t1t2_<ID>_<Visit>.jpg - t2w and t1w co-registration
+./qc/qc_nl_reg_<ID>_<Visit>.jpg - brain with stx target outline (nonlinear registration)
+./qc/qc_t1w_lc_clean_<ID>_<Visit>.jpg - tissue classification (linear)
+./qc/qc_nl_t1w_segment_lobe_<ID>_<Visit>.jpg - brain segmentation (nonlinear)
+
+./vol
+./vol/nl_<ID>_<Visit>.txt - text file with volumes of various substructures (in native space)
 

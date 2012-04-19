@@ -40,8 +40,8 @@ my $enable_clasp=0;
 my $force_fallback=0;
 my $dry_run=0;
 my $nu_runs=5;
-my $model_dir="$ENV{TOPDIR}/models";
-my $model='icbm_avg_152_t1_tal_nlin_symmetric_VI';
+my $model_dir="$ENV{MNI_DATAPATH}/icbm152_model_09c";
+my $model='mni_icbm152_t1_tal_nlin_sym_09c';
 my $acr_model;
 my $geo_corr_enabled=1;
 my $me = basename ($0);
@@ -443,7 +443,7 @@ if($native_t2w)
 {
   ###########################
   ## Quality Control...
-  $program = "$bin_dir/pipeline_qc.pl";
+  $program = "$bin_dir/pipeline_qc_t2t1.pl";
   @inputs = [$initial_file_list{'tal_t1w'}, $initial_file_list{'tal_t2w'}];
   $parameter = "$candid $visitno $age";
   @outputs = [$initial_file_list{'qc_tal_t1t2'}];
@@ -579,7 +579,7 @@ sub create_directories
 {
     my ($base_name) = @_;
 
-    my @dirnames = qw(crp b0correct clp nuc tal nl tal_cls nl_cls seg lob smooth qc vol clasp deface);
+    my @dirnames = qw(crp b0correct clp nuc tal nl tal_cls seg lob smooth qc vol clasp deface);
     my $dirname;
 
     if(!-e $base_name) {` mkdir -p $base_name`;}
@@ -655,11 +655,6 @@ sub get_list_files_native_files
     $list_names{'tal_comp_msk'} = "$base_name/tal/tal_comp_msk_${candid}_${visitno}.mnc";
     
     $list_names{'tal_clean'} = "$base_name/tal_cls/tal_clean_${candid}_${visitno}.mnc";
-    $list_names{'tal_cocosco'} = "$base_name/tal_cls/tal_cocosco_${candid}_${visitno}.mnc";
-
-    $list_names{'nl_clean'} = "$base_name/nl_cls/nl_clean_${candid}_${visitno}.mnc";
-    $list_names{'nl_cocosco'} = "$base_name/nl_cls/nl_cocosco_${candid}_${visitno}.mnc";
-
     $list_names{'tal_clean_lobe'} = "$base_name/lob/tal_clean_lob_${candid}_${visitno}.mnc";
    
     $list_names{'nl_clean_lobe'} = "$base_name/lob/nl_clean_lob_${candid}_${visitno}.mnc";
@@ -692,10 +687,10 @@ sub get_list_files_native_files
     $list_names{'tal_volumes'}="$base_name/vol/tal_${candid}_${visitno}.txt";
     $list_names{'nl_volumes'}="$base_name/vol/nl_${candid}_${visitno}.txt";
 
-    $list_names{'clasp'}="$base_name/clasp/${candid}_${visitno}_clasp";
-    $list_names{'clasp3'}="$base_name/clasp/${candid}_${visitno}";
-    
-    $list_names{'face'}="$base_name/face/atlas/lobes_measurements.csv";
+#     $list_names{'clasp'}="$base_name/clasp/${candid}_${visitno}_clasp";
+#     $list_names{'clasp3'}="$base_name/clasp/${candid}_${visitno}";
+#     
+#     $list_names{'face'}="$base_name/face/atlas/lobes_measurements.csv";
 	
     #$list_names{'tal_clean_pve_base'} = "$base_name/pve/tal_clean_pve_${candid}_${visitno}.mnc";
     #$list_names{'tal_clean_pve_csf'} = "$base_name/pve/tal_clean_pve_${candid}_${visitno}_csf.mnc";

@@ -139,7 +139,7 @@ if (-e $regxfm && !$clobber) {
     {
       do_cmd('icc_mask.pl',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc",'--model',$modelfn,'--icc-model',$model_brain_mask);
     } else {
-      do_cmd('mincbeast',"$tmpdir/tal1.mnc","$tmpdir/tal1");
+      do_cmd('mincbeast',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc");
     }
     # second stage
     # map back to the input space

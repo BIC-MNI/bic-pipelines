@@ -52,7 +52,8 @@ my @files_to_add_to_db = ();
 
 #do_cmd('xfminvert',$infile_xfm,"$tmpdir/inv.xfm");
 do_cmd('xfm_normalize.pl',$infile_xfm,'--like',$model,'--step',2,"$tmpdir/inv_norm.xfm",'--invert');
-do_cmd('grid_proc','--det',"$tmpdir/inv_norm_grid_0.mnc","$tmpdir/inv_norm_det.mnc");
+do_cmd('mincreshape','-dimorder','vector_dimension,xspace,yspace,zspace',"$tmpdir/inv_norm_grid_0.mnc","$tmpdir/inv_norm_grid_0_.mnc");
+do_cmd('mincblob','-determinant',"$tmpdir/inv_norm_grid_0_.mnc","$tmpdir/inv_norm_det.mnc");
 $ENV{MINC_COMPRESS}=$compress if $compress;
 do_cmd('fast_blur','--fwhm',$fwhm,"$tmpdir/inv_norm_det.mnc",$outfile_dbm,'--clobber');
 
