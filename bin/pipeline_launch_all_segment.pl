@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5 -w
+#!/usr/bin/env perl -w
 #
 # Andrew Janke - rotor@bic.mni.mcgill.ca
 # Script to register data to model space
