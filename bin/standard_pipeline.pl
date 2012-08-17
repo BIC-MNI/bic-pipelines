@@ -31,13 +31,8 @@ MNI::Spawn::SetOptions (verbose => 0,execute => 1,strict  => 0);
 my $verbose = 0;
 my $fake    = 0;
 my $clobber = 0;
-my $disable_db=0;
-my $force_update_db=0;
-my $update_db=0;
 my $file_prefix; 
 my $base_dir;
-my $enable_clasp=0;
-my $force_fallback=0;
 my $dry_run=0;
 my $nu_runs=5;
 my $model_dir="$ENV{MNI_DATAPATH}/icbm152_model_09c";
@@ -64,13 +59,8 @@ my $mri_3t;
 GetOptions(
 	   'verbose'           => \$verbose,
 	   'clobber'           => \$clobber,
-	   'disable_db'        => \$disable_db,
-	   'update_db'         => \$update_db,
 	   'prefix=s'          => \$file_prefix,
 	   'basedir=s'         => \$base_dir,
-	   'force_update_db'   => \$force_update_db,
-	   'enable_clasp'      => \$enable_clasp,
-	   'force_fallback'    => \$force_fallback,
 	   'dry_run'           => \$dry_run,
 	   'nu_runs=i'         => \$nu_runs,
 	   'model_dir=s'       => \$model_dir,
@@ -90,11 +80,8 @@ my $Help = <<HELP;
   Usage: $me <candID> <visitno> <T1 file> [T2 file] [PD file]
     --verbose be verbose
     --clobber clobber _all_ output files
-    --disable_db disable database access completely (ignore b0 correction, fallback/primary devision)
-    --force_update_db force updating database for all files
     --prefix <dir> output directory prefix  ,all data will be in <prefix>/<subject_id>/<visit_label>
     --basedir <dir> put all output into this directory (overrides prefix)
-    --force_fallback force fall back data processing
     --dry_run  don't actually execute the commands, just show what will be done
     --nu_runs <n> run Nu correct n times
     --model_dir <dir> use this modeldir, default: $model_dir
@@ -107,7 +94,7 @@ my $Help = <<HELP;
     --manual <dir> manual directory prefix 
     --benchmark <output>
     --run-face run FACE surface extraction algorithm
-      
+    
   Problems or comments should be sent to: vfonov\@bic.mni.mcgill.ca
 HELP
 
@@ -121,9 +108,6 @@ $model_gm=~s/_t1/_gm/;
 $model_wm=~s/_t1/_wm/;
 $model_csf=~s/_t1/_csf/;
 
-$disable_db=1;
-$update_db=0;
-
 my ($candid,$visitno,$native_t1w,$native_t2w,$native_pdw) = @ARGV;
 
 $|=1;
@@ -133,7 +117,6 @@ $base_dir = "${file_prefix}/${candid}/${visitno}" unless $base_dir;
 
 print $base_dir."\n";
 `mkdir -p ${base_dir}`;
-print "Force update DB is on\n" if $force_update_db;
 
 #my $lockmgr = LockFile::Simple->make(-format => '%f', -max => 1, -delay => 1, -nfs => 1, -autoclean=>1, -hold=>6*3600,-stale=>1);
 #$lockmgr->lock("${base_dir}/lock") || die "Dataprocessing is locked\n";
@@ -186,35 +169,60 @@ $list_fileIDs{'native_pdw'} = $native_pd_ID;
 
 my $type, my $program, my @inputs, my @outputs, my $parameter, my @output_types, my @fileID;
 
+if($deface_volume)
+{
+    ####################
+    ##pipeline correct for each anatomical
+    $program = "$bin_dir/pipeline_deface.pl";
+    @inputs = ($initial_file_list{'native_t1w'});
+    $parameter = " --model-dir ${model_dir} --model ${model} --keep-real-range --output $initial_file_list{'deface_base'}";
+    @outputs = ($initial_file_list{'deface_t1w'});
+    @output_types = qw(defaced);
+    
+    if($native_t2w)
+    {
+      push @inputs,$initial_file_list{'native_t2w'};
+      push @outputs,$initial_file_list{'deface_t2w'};
+      push @output_types,'defaced';
+    }
+    
+    if($native_pdw)
+    {
+      push @inputs,$initial_file_list{'native_pdw'};
+      push @outputs,$initial_file_list{'deface_pdw'};
+      push @output_types,'defaced';
+    }
+    print "Outputs: @outputs \n";
+    @fileID = create_function($program, \@inputs, $parameter, \@outputs, \@output_types, $type, 'native', '', $list_fileIDs{'native_t1w'}, (1, 1, 1, 1));
+    $list_fileIDs{'deface_t1w'} = $fileID[0];
+    $list_fileIDs{'deface_t2w'} = $fileID[1] if($native_t2w);
+    $list_fileIDs{'deface_pdw'} = $fileID[2] if($native_pdw);
+}
 
 foreach $type(@types)
 {
     my $native_file_ID;
-    my $native_current = "native_$type";
-    my $crop_current = "crop_$type";
-    #my $b0correct_current = "b0correct_$type";
-    my $nuc_current = "nuc_$type";
-    my $nuc_imp_current = "nuc_imp_$type";
-    my $clp_current = "clp_$type";
-    my $clp_stats_current = "clp_stats_$type";
+    
+    my $native_current = $deface_volume?"deface_$type":"native_$type";
+    my $clp_current    = "clp_$type";
     my ($geo,$b0);
     my $model_spec;
-    if($type =~ /t1w/) {$native_file_ID = $native_t1_ID; $geo=$geo_t1  ;$b0=$b0_t1; $model_spec=$model_t1; }
+    
+    if($type =~ /t1w/) {$native_file_ID = $native_t1_ID; $geo=$geo_t1  ;$b0=$b0_t1; $model_spec=$model_t1;}
     if($type =~ /t2w/) {$native_file_ID = $native_t2_ID; $geo=$geo_t2pd;$b0=$b0_t2; $model_spec=$model_t2;}
     if($type =~ /pdw/) {$native_file_ID = $native_pd_ID; $geo=$geo_t2pd;$b0=$b0_pd; $model_spec=$model_pd;}
-    
-    $list_fileIDs{$crop_current} = $native_file_ID;
+
+    $list_fileIDs{$clp_current} = $native_file_ID;
 
     ####################
     ##pipeline correct for each anatomical
     $program = "$bin_dir/pipeline_correct.pl";
     @inputs = [$initial_file_list{$native_current}];
     $parameter = "--iterations ${nu_runs} --model ${model_dir}/${model_spec}.mnc --model-mask ${model_dir}/${model}_mask.mnc --stx --verbose";
-    $parameter = " --model ${model_dir}/${model_spec}.mnc --verbose";
     $parameter.= ' --3t' if $mri_3t;
     @outputs = [$initial_file_list{$clp_current}];
-    @output_types = qw(nuc_imp nuc_mnc);
-    @fileID = create_function($program, @inputs, $parameter, @outputs, \@output_types, $type, 'native', '', $list_fileIDs{$nuc_current}, (1, 1));
+    @output_types = qw(clp_mnc);
+    @fileID = create_function($program, @inputs, $parameter, @outputs, \@output_types, $type, 'native', '', $list_fileIDs{$native_current}, (1, 1, 1,1));
     $list_fileIDs{$clp_current} = $fileID[0];
 }
 
@@ -552,27 +560,6 @@ if($benchmark)
   my  ($user2,$system2,$cuser2,$csystem2) = times;
   print BENCHMARK "TOTAL,$cuser2\n";
   close BENCHMARK;
-  
-}
-
-sub GetSelectedScanID
-{
-    my ($in_CandID, $in_VisitLabel, $in_ScanType)= @_;
-
-    # Get the Selected file for the scan type. Look at obj0, obj1, and obj2 as well.  If the
-    # selected scan has the "obj" prefix, it means that the scan's parameters fall strictly within
-    # acquisition protocol.
- 
-    my $search_criteria = "select files.fileID from session, files, parameter_file, parameter_type where session.candID=$in_CandID and session.ID=files.sessionID and files.fileID=parameter_file.fileID and parameter_file.parametertypeID = parameter_type.parametertypeID and parameter_type.Name = \"Selected\" and session.visit_label=\"$in_VisitLabel\" and parameter_file.Value = \"$in_ScanType\"";
-    
-    my @SelectedFile = pipeline_functions::make_query($dbh,$search_criteria) ;
-
-    if (@SelectedFile == 0 ) {
-      warn "No selected $in_ScanType scan for candidate $in_CandID.\n";
-      return -1;
-    }
-
-    return $SelectedFile[0];
 }
 
 ###################################################################
@@ -580,7 +567,7 @@ sub create_directories
 {
     my ($base_name) = @_;
 
-    my @dirnames = qw(crp b0correct clp nuc tal nl tal_cls seg lob smooth qc vol clasp deface);
+    my @dirnames = qw(clp tal nl tal_cls seg lob smooth qc vol deface);
     my $dirname;
 
     if(!-e $base_name) {` mkdir -p $base_name`;}
@@ -604,6 +591,7 @@ sub get_list_files_native_files
     $list_names{'native_pdw'} = $pdw;
 
     my $type;
+    $list_names{'deface_base'} = "$base_name/deface/deface_${candid}_${visitno}";
     foreach $type(@types)
     {
 
@@ -627,7 +615,7 @@ sub get_list_files_native_files
 			$tal_noscale_current = "tal_noscale_$type";
 			$tal_noscale_xfm_current = "tal_noscale_xfm_$type";
 		
-      $list_names{$native_deface} = "$base_name/deface/deface_${candid}_${visitno}_${type}.mnc";
+      $list_names{$native_deface} = "$list_names{'deface_base'}_${type}.mnc";
       
 			$list_names{$crop_current} = "$base_name/crp/crop_${candid}_${visitno}_${type}.mnc";	
 			$list_names{$b0correct_current} = "$base_name/b0correct/b0correct_${candid}_${visitno}_${type}.mnc";
@@ -645,7 +633,7 @@ sub get_list_files_native_files
 			$list_names{$tal_noscale_xfm_current} = "$base_name/tal/tal_noscale_xfm_${candid}_${visitno}_${type}.xfm";
     }
     
-    $list_names{'deface_grid'} = "$base_name/deface/deface_${candid}_${visitno}_grid_0.mnc";
+    $list_names{'deface_grid'} = "$list_names{'deface_base'}_grid_0.mnc";
     $list_names{'nl_grid'} = "$base_name/nl/nl_xfm_${candid}_${visitno}_grid_0.mnc";
     $list_names{'nl_xfm'} = "$base_name/nl/nl_xfm_${candid}_${visitno}.xfm";
 	
