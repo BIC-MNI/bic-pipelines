@@ -209,7 +209,7 @@ foreach $type(@types)
     ##pipeline correct for each anatomical
     $program = "$bin_dir/pipeline_correct.pl";
     @inputs = [$initial_file_list{$native_current}];
-    #$parameter = "--iterations ${nu_runs} --model ${model_dir}/${model_spec}.mnc --model-mask ${model_dir}/${model}_mask.mnc --stx --verbose";
+    $parameter = "--iterations ${nu_runs} --model ${model_dir}/${model_spec}.mnc --model-mask ${model_dir}/${model}_mask.mnc --stx --verbose";
     $parameter = " --model ${model_dir}/${model_spec}.mnc --verbose";
     $parameter.= ' --3t' if $mri_3t;
     @outputs = [$initial_file_list{$clp_current}];

@@ -25,10 +25,14 @@ use File::Temp qw/ tempfile tempdir /;
 my $me = basename ($0);
 my $verbose     = 0;
 my $clobber     = 0;
+my $iterations  = 1;
 my $mri3t;
 my $fake=0;
 my $model_mask;
 my $keeptmp   = 0;
+my $stx;
+my $xfm;
+my $stx_mask;
 my ($model, $modeldir);
 my $nuyl=0;
 my $denoise=0;
@@ -38,9 +42,14 @@ my $modelfn;
 GetOptions(
 	   'verbose' => \$verbose,
 	   'clobber' => \$clobber,
+	   'iterations=i'=> \$iterations,
      'model=s' => \$modelfn,
      'keeptmp' => \$keeptmp,
      '3t'      => \$mri3t,
+     'stx'     => \$stx,
+     'model-mask=s'  => \$model_mask,
+     'xfm=s'         => \$xfm,
+     'stx-mask=s'    => \$stx_mask,
      'nuyl'          => \$nuyl,
      'denoise'       => \$denoise,
      'noise=f'       => \$noise,
@@ -51,8 +60,13 @@ if($#ARGV < 1)
  die <<HELP 
 Usage: $me <infile> <outfile_mnc> 
  [
+  --iterations <n>, (default $iterations  ) perform so many iterations in nu_correct
   --model <mnc>     use this model for intensity normalization ***NEEED***
+  --model-mask <mnc>  use this brain mask
   --3t              assume 3T scanner was used, (default  1.5T)
+  --stx             perform preliminary registration to stereotaxic space for masking
+  --xfm <xfm>       use this transformation to stereotaxic space
+  --stx-mask <mask> use this mask (in stereotaxic space)
   --nuyl            Use Nuyl intensity normalization technique
   --denoise         Perform denoising
   --noise <f>       Noise level estimate
@@ -102,23 +116,94 @@ if($denoise)
   do_cmd('mv',"$tmpdir/denoise.mnc","$tmpdir/0.mnc");
 }
 
+my $mask;
 
-#TODO change parameters for 3T mri
-do_cmd('c3d',"$tmpdir/0.mnc",'-n4',"$tmpdir/1.mnc");
-
-unless($nuyl)
+# try to make a brain mask (approximate)
+if($stx && $model && $model_mask)
 {
-  do_cmd('volume_pol', '--order', 1, 
-          '--min', 0, '--max', 100, 
-          '--noclamp',
-          "$tmpdir/1.mnc", $modelfn,'--expfile', "$tmpdir/stats", '--clobber');
-          
-  do_cmd('minccalc', "$tmpdir/1.mnc", $outfile, 
-          '-expfile', "$tmpdir/stats", '-clobber','-short');
-} else {
-  do_cmd('volume_nuyl',"$tmpdir/1.mnc",$modelfn,"$tmpdir/nuyl.mnc",'--fix_zero_padding');
-  do_cmd('mincreshape','-short','-clob',"$tmpdir/nuyl.mnc",$outfile);
+  $mask="$tmpdir/mask.mnc";
+  unless($xfm)
+  {
+    my @args=( "nu_correct", "-clobber", "-iter", 100, "-stop", 0.0001, "-fwhm", 0.1,"$tmpdir/0.mnc",  "$tmpdir/1.mnc");
+    push @args,'-distance',50 if $mri3t;
+    do_cmd(@args);
+    
+    #do_cmd('volume_pol', '--order', 1, "$tmpdir/1.mnc",$modelfn,'--expfile', "$tmpdir/stats0");
+    #do_cmd('minccalc','-expfile',"$tmpdir/stats0","$tmpdir/1.mnc","$tmpdir/1_.mnc");
+    
+    do_cmd('volume_nuyl',"$tmpdir/1.mnc",$modelfn,"$tmpdir/1_.mnc");
+    do_cmd('bestlinreg.pl',"$tmpdir/1_.mnc",$modelfn,"$tmpdir/stx.xfm");
+    $xfm="$tmpdir/stx.xfm";
+  }
+  if($stx_mask)
+  {
+    do_cmd('mincresample','-nearest','-like',"$tmpdir/0.mnc",$stx_mask,$mask,'-transform',$xfm,'-invert_transform');
+  } else {
+    do_cmd('mincresample','-nearest','-like',"$tmpdir/0.mnc",$model_mask,$mask,'-transform',$xfm,'-invert_transform');
+  }
 }
+
+
+my $i;
+# iterative N3
+for($i=1;$i<=$iterations;$i++)
+{
+  my $p=$i-1;
+  my @args=( "nu_correct", "-clobber", 
+             "-iter", 100, 
+             "-stop", 0.0001, 
+             "-fwhm", 0.1,
+             "$tmpdir/$p.mnc",  "$tmpdir/$i.mnc",
+             '-clobber');
+
+  push @args,'-distance',50 if $mri3t;
+  push @args,'-mask',$mask if $mask;
+
+  do_cmd(@args);
+}
+
+$ENV{MINC_COMPRESS}=$compress if $compress;
+
+# normalize intensity
+if($mask && $model_mask)
+{
+  unless($nuyl)
+  {
+    do_cmd('volume_pol', '--order', 1, '--min', 0, '--max', 100,  
+         "$tmpdir/$iterations.mnc", $modelfn,
+         '--expfile', "$tmpdir/stats", 
+         '--clobber','--noclamp',
+         '--source_mask',$mask,'--target_mask',$model_mask);
+
+    do_cmd('minccalc', "$tmpdir/$iterations.mnc", $outfile, 
+           '-expfile', "$tmpdir/stats", '-clobber','-short');
+
+  } else {
+    do_cmd('volume_nuyl',"$tmpdir/1.mnc",$modelfn,"$tmpdir/1_.mnc",
+           '--source-mask',$mask,
+           '--target-mask',$model_mask);
+    do_cmd('mincreshape','-short','-clob',"$tmpdir/nuyl.mnc",$outfile);
+  }
+} else {
+  unless($nuyl)
+  {
+    do_cmd('volume_pol', '--order', 1, 
+           '--min', 0, '--max', 100, 
+           '--noclamp',
+           "$tmpdir/$iterations.mnc", $modelfn,'--expfile', "$tmpdir/stats", '--clobber');
+           
+    do_cmd('minccalc', "$tmpdir/$iterations.mnc", $outfile, 
+           '-expfile', "$tmpdir/stats", '-clobber','-short');
+  } else {
+    do_cmd('volume_nuyl',"$tmpdir/$iterations.mnc",$modelfn,"$tmpdir/nuyl.mnc",'--fix_zero_padding');
+    do_cmd('mincreshape','-short','-clob',"$tmpdir/nuyl.mnc",$outfile);
+
+  }
+}
+
+#
+#correct for zero padded data
+#do_cmd('minccalc','-express','A[0]>0?1:0',"$tmpdir/$iterations.mnc","$tmpdir/signal.mnc");
 
 
 @files_to_add_to_db = ($outfile);
