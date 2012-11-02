@@ -20,6 +20,7 @@ my $fake    = 0;
 my $nlmask  = 0;
 my $model;
 my $icc_model;
+my $beastlib='';
 
 GetOptions(
 	   'verbose'    => \$verbose,
@@ -28,9 +29,10 @@ GetOptions(
      'nlmask'     => \$nlmask,
      'model=s'    => \$model,
      'icc_model=s' => \$icc_model,
+     'beastlib=s' => \$beastlib,
 	   );
 
-if ($#ARGV < 1){ die "Usage: $me <infile_t1> [infilet2] [infilepd] <outfile_mnc> [--eye_mask <eye_mask>] [--nlmask --model model_t1.mnc ---icc_model model_icc.mnc]\n"; }
+if ($#ARGV < 1){ die "Usage: $me <infile_t1> [infilet2] [infilepd] <outfile_mnc> [--eye_mask <eye_mask>] [--nlmask --model model_t1.mnc ---icc_model model_icc.mnc --beastlib <lib>]\n"; }
 
 #####################
 ##infile includes the tal transformed anatomical data
@@ -52,10 +54,10 @@ my $j=0;
 if($nlmask) {
   do_cmd('icc_mask.pl',"$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc",'--model',$model,'--icc-model',$icc_model);
 } else {
-  do_cmd('mincbeast', "$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc");
+  do_cmd('mincbeast', $beastlib, "$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc");
 }
 
-if($model_eye_mask )#&& $#ARGV > 1
+if($model_eye_mask )
 {
   do_cmd('mincresample','-like',"$tmpdir/mri_mask.mnc",$model_eye_mask,"$tmpdir/eye_mask.mnc");
   do_cmd('minccalc', '-expression','(A[0]>0.5 && A[1]<=0.5)?1:0',"$tmpdir/mri_mask.mnc" ,"$tmpdir/eye_mask.mnc", $outfile_mnc, '-clobber','-byte');

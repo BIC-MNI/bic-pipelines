@@ -37,6 +37,7 @@ my $dry_run=0;
 my $nu_runs=5;
 my $model_dir="$ENV{MNI_DATAPATH}/icbm152_model_09c";
 my $model='mni_icbm152_t1_tal_nlin_sym_09c';
+my $beastlib="$ENV{MNI_DATAPATH}/beast-library-1.0";
 my $acr_model;
 my $geo_corr_enabled=1;
 my $me = basename ($0);
@@ -73,7 +74,8 @@ GetOptions(
      'manual=s'          => \$manual_dir,
      'benchmark=s'       => \$benchmark,
      'run-face'          => \$run_face,
-     '3t'                => \$mri_3t
+     '3t'                => \$mri_3t,
+     'beastlib=s'        => \$beastlib,
 	   );
 
 my $Help = <<HELP;
@@ -94,7 +96,7 @@ my $Help = <<HELP;
     --manual <dir> manual directory prefix 
     --benchmark <output>
     --run-face run FACE surface extraction algorithm
-    
+    --beastlib <dir> - location of BEaST library, default: $beastlib
   Problems or comments should be sent to: vfonov\@bic.mni.mcgill.ca
 HELP
 
@@ -314,7 +316,7 @@ $program = "$bin_dir/pipeline_iccmask_stx.pl";
 @inputs = ($initial_file_list{'tal_t1w'} );
 push (@inputs, $initial_file_list{'tal_t2w'}) if $native_t2w;
 push (@inputs, $initial_file_list{'tal_pdw'}) if $native_pdw;
-$parameter = "--eye_mask ${model_dir}/${model}_eye_mask.mnc ";
+$parameter = "--eye_mask ${model_dir}/${model}_eye_mask.mnc --beastlib $beastlib ";
 @outputs = [$initial_file_list{'tal_comp_msk'}];
 @output_types = qw(tal_comp_msk);
 @fileID = create_function($program, \@inputs, $parameter, @outputs, \@output_types, '', 'linear', '', "$list_fileIDs{'tal_t1w'}".($native_t2w?",$list_fileIDs{'tal_t2w'}":'').($native_pdw?",$list_fileIDs{'tal_pdw'}":''), (1));
