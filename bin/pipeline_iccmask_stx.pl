@@ -54,7 +54,7 @@ my $j=0;
 if($nlmask) {
   do_cmd('icc_mask.pl',"$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc",'--model',$model,'--icc-model',$icc_model);
 } else {
-  do_cmd('mincbeast', $beastlib, "$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc");
+  do_cmd('mincbeast', $beastlib, "$tmpdir/t1.mnc", "$tmpdir/mri_mask.mnc",'-fill','-median','-same_resolution','-configuration',"$beastlib/default.2mm.conf");
 }
 
 if($model_eye_mask )
