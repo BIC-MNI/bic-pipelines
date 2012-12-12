@@ -21,7 +21,7 @@ use Getopt::Long;
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use MNI::Spawn;
-use pipeline_functions;
+#use pipeline_functions;
 
 MNI::Spawn::SetOptions (verbose => 0,execute => 1,strict  => 0);
 
@@ -97,6 +97,7 @@ my $Help = <<HELP;
     --benchmark <output>
     --run-face run FACE surface extraction algorithm
     --beastlib <dir> - location of BEaST library, default: $beastlib
+    --3t use N3 parameters for 3T
   Problems or comments should be sent to: vfonov\@bic.mni.mcgill.ca
 HELP
 
@@ -835,4 +836,67 @@ sub fix_sampling {
     do_cmd('minc_modify_header','-sinsert','xspace:spacing=regular__','-sinsert','zspace:spacing=regular__','-sinsert','yspace:spacing=regular__',$out)
   }
   return $out;
+}
+
+
+
+sub create_header_info_for_many_parented
+{
+  ($child_mnc_file, $parent_mnc_file, $tmpdir) = @_;
+    #VF check .gz files
+
+  if(!-e $child_mnc_file) {
+    if(-e $child_mnc_file.".gz") {
+      $child_mnc_file=$child_mnc_file.".gz";
+    } else {
+      die "create_header_info_for_many_parented ${child_mnc_file} doesn't exists!\n";
+    }
+  }
+
+  if(!-e $parent_mnc_file) {
+    if(-e $parent_mnc_file.".gz") {
+      $parent_mnc_file=$parent_mnc_file.".gz";
+    } else {
+      die "create_header_info_for_many_parented ${parent_mnc_file} doesn't exists!\n";
+    }
+  }
+      
+    $history = `mincinfo -attvalue :history $child_mnc_file`;
+
+    $tmp_file = "$tmpdir/temp_modified.mnc";
+    
+    #$tmp_file = $child_mnc_file;
+    do_cmd("mincaverage -clobber $child_mnc_file -nocopy_header $tmp_file");
+
+    @patient = `mincheader $parent_mnc_file | grep patient:`;
+    foreach $line(@patient)
+    {
+      chomp($line);
+      $line =~ s/ //g;
+      print("minc_modify_header $tmp_file -sinsert $line\n");
+      do_cmd('minc_modify_header',$tmp_file,'-sinsert',$line);
+    }
+    
+    my @dicom_tags = qw(dicom_0x0010:el_0x0010 dicom_0x0008:el_0x0020 dicom_0x0008:el_0x0070 dicom_0x0008:el_0x1090 dicom_0x0018:el_0x1000 dicom_0x0018:el_0x1020 dicom_0x0008:el_0x103e);
+
+    my $tag;
+    foreach $tag(@dicom_tags) {
+      @dicom_field = `mincheader $parent_mnc_file | grep $tag`;
+      foreach $line(@dicom_field)
+      {
+          chomp($line);
+          $line =~ s/ //g;
+          print("minc_modify_header $tmp_file -sinsert $line\n");
+          do_cmd('minc_modify_header',$tmp_file,'-sinsert',$line);
+      }
+    }
+    
+    do_cmd('minc_modify_header',$tmp_file,'-delete',':history');
+    do_cmd('minc_modify_header',$tmp_file,'-sinsert',":history=\"${history}\"");
+    if($child_mnc_file =~/\.gz$/) {
+      do_cmd("gzip -c ${tmp_file}>${child_mnc_file}");
+    } else {
+      do_cmd('cp',$tmp_file,$child_mnc_file);
+    }
+    do_cmd('rm',$tmp_file);
 }
