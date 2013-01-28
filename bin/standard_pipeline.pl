@@ -37,7 +37,7 @@ my $dry_run=0;
 my $nu_runs=5;
 my $model_dir="$ENV{MNI_DATAPATH}/icbm152_model_09c";
 my $model='mni_icbm152_t1_tal_nlin_sym_09c';
-my $beastlib="$ENV{MNI_DATAPATH}/beast-library-1.0";
+my $beastlib="$ENV{MNI_DATAPATH}/beast-library-1.1";
 my $acr_model;
 my $geo_corr_enabled=1;
 my $me = basename ($0);
@@ -235,7 +235,7 @@ foreach $type(@types)
 #do_cmd('ln','-s',$manual_file_list{'tal_xfm_t1w'},$initial_file_list{'tal_xfm_t1w'}) if $manual_dir && -e $manual_file_list{'tal_xfm_t1w'};
 $program = "$bin_dir/pipeline_mritotal.pl";
 @inputs = [$initial_file_list{'clp_t1w'}];
-$parameter = "--model_dir ${model_dir} --model_name ${model}";
+$parameter = "--model_dir ${model_dir} --model_name ${model} --beastlib $beastlib";
 $parameter = $parameter." --initial $manual_file_list{'tal_xfm_t1w'}" if $manual_dir && -e $manual_file_list{'tal_xfm_t1w'};
 $parameter=$parameter." --correct $geo_t1 "  if $geo_t1;
 @outputs = [$initial_file_list{'tal_xfm_t1w'}, $initial_file_list{'tal_t1w'}];
@@ -842,7 +842,7 @@ sub fix_sampling {
 
 sub create_header_info_for_many_parented
 {
-  ($child_mnc_file, $parent_mnc_file, $tmpdir) = @_;
+  my ($child_mnc_file, $parent_mnc_file, $tmpdir) = @_;
     #VF check .gz files
 
   if(!-e $child_mnc_file) {
@@ -861,42 +861,44 @@ sub create_header_info_for_many_parented
     }
   }
       
-    $history = `mincinfo -attvalue :history $child_mnc_file`;
+  my $history = `mincinfo -attvalue :history $child_mnc_file`;
 
-    $tmp_file = "$tmpdir/temp_modified.mnc";
+  my $tmp_file = "$tmpdir/temp_modified.mnc";
     
+  my $line;
+  
     #$tmp_file = $child_mnc_file;
-    do_cmd("mincaverage -clobber $child_mnc_file -nocopy_header $tmp_file");
+  do_cmd("mincaverage -clobber $child_mnc_file -nocopy_header $tmp_file");
 
-    @patient = `mincheader $parent_mnc_file | grep patient:`;
-    foreach $line(@patient)
+  my  @patient = `mincheader $parent_mnc_file | grep patient:`;
+  foreach $line(@patient)
+  {
+    chomp($line);
+    $line =~ s/ //g;
+    print("minc_modify_header $tmp_file -sinsert $line\n");
+    do_cmd('minc_modify_header',$tmp_file,'-sinsert',$line);
+  }
+    
+  my @dicom_tags = qw(dicom_0x0010:el_0x0010 dicom_0x0008:el_0x0020 dicom_0x0008:el_0x0070 dicom_0x0008:el_0x1090 dicom_0x0018:el_0x1000 dicom_0x0018:el_0x1020 dicom_0x0008:el_0x103e);
+
+  my $tag;
+  foreach $tag(@dicom_tags) {
+    my @dicom_field = `mincheader $parent_mnc_file | grep $tag`;
+    foreach $line(@dicom_field)
     {
-      chomp($line);
-      $line =~ s/ //g;
-      print("minc_modify_header $tmp_file -sinsert $line\n");
-      do_cmd('minc_modify_header',$tmp_file,'-sinsert',$line);
+        chomp($line);
+        $line =~ s/ //g;
+        print("minc_modify_header $tmp_file -sinsert $line\n");
+        do_cmd('minc_modify_header',$tmp_file,'-sinsert',$line);
     }
+  }
     
-    my @dicom_tags = qw(dicom_0x0010:el_0x0010 dicom_0x0008:el_0x0020 dicom_0x0008:el_0x0070 dicom_0x0008:el_0x1090 dicom_0x0018:el_0x1000 dicom_0x0018:el_0x1020 dicom_0x0008:el_0x103e);
-
-    my $tag;
-    foreach $tag(@dicom_tags) {
-      @dicom_field = `mincheader $parent_mnc_file | grep $tag`;
-      foreach $line(@dicom_field)
-      {
-          chomp($line);
-          $line =~ s/ //g;
-          print("minc_modify_header $tmp_file -sinsert $line\n");
-          do_cmd('minc_modify_header',$tmp_file,'-sinsert',$line);
-      }
-    }
-    
-    do_cmd('minc_modify_header',$tmp_file,'-delete',':history');
-    do_cmd('minc_modify_header',$tmp_file,'-sinsert',":history=\"${history}\"");
-    if($child_mnc_file =~/\.gz$/) {
-      do_cmd("gzip -c ${tmp_file}>${child_mnc_file}");
-    } else {
-      do_cmd('cp',$tmp_file,$child_mnc_file);
-    }
-    do_cmd('rm',$tmp_file);
+  do_cmd('minc_modify_header',$tmp_file,'-delete',':history');
+  do_cmd('minc_modify_header',$tmp_file,'-sinsert',":history=\"${history}\"");
+  if($child_mnc_file =~/\.gz$/) {
+    do_cmd("gzip -c ${tmp_file}>${child_mnc_file}");
+  } else {
+    do_cmd('cp',$tmp_file,$child_mnc_file);
+  }
+  do_cmd('rm',$tmp_file);
 }

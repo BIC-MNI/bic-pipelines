@@ -29,6 +29,7 @@ my $fake=0;
 my $correct;
 my $initial;
 my $nlmask;
+my $beastlib;
 
 my $model;
 my $modeldir;
@@ -42,14 +43,15 @@ GetOptions(
 	   'model_dir=s'    => \$modeldir,
 	   'model_name=s'   => \$model,
 	   'initial=s'     => \$initial,
-     'nlmask'        => \$nlmask
+     'nlmask'        => \$nlmask,
+     'beastlib=s'    => \$beastlib,
 	   );
 
 #################
 ##inputs are the t1 tal file
 ##outputs are the xfm file, and the output mnc file
 if ($#ARGV < 2) { 
-  die "Usage: $me <infile> <outfile_xfm> <outfilemnc> [--clobber --correct <geometrical correction> --model_dir <dir> --model_name <base name> --initial <initial xfm> --nlmask]\n";
+  die "Usage: $me <infile> <outfile_xfm> <outfilemnc> [--clobber --correct <geometrical correction> --model_dir <dir> --model_name <base name> --beastlib <beast library location> --initial <initial xfm> --nlmask]\n";
 }
 
 my $modelfn  = "$modeldir/$model.mnc";
@@ -139,7 +141,7 @@ if (-e $regxfm && !$clobber) {
     {
       do_cmd('icc_mask.pl',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc",'--model',$modelfn,'--icc-model',$model_brain_mask);
     } else {
-      do_cmd('mincbeast',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc");
+      do_cmd('mincbeast',$beastlib, "$tmpdir/tal1.mnc", "$tmpdir/tal1_mask.mnc",'-fill','-median','-same_resolution','-configuration',"$beastlib/default.2mm.conf");
     }
     # second stage
     # map back to the input space
@@ -179,6 +181,6 @@ print("Files created:@files_to_add_to_db\n");
 sub do_cmd { 
   print STDOUT "@_\n" if $verbose;
   if(!$fake){
-    system(@_) == 0 or die;
+    system(@_) == 0 or die "DIED: @_\n";
   }
 }
