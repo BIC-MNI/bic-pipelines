@@ -178,7 +178,7 @@ if($deface_volume)
     ##pipeline correct for each anatomical
     $program = "$bin_dir/pipeline_deface.pl";
     @inputs = ($initial_file_list{'native_t1w'});
-    $parameter = " --model-dir ${model_dir} --model ${model} --keep-real-range --output $initial_file_list{'deface_base'}";
+    $parameter = " --model-dir ${model_dir} --model ${model} --keep-real-range --output $initial_file_list{'deface_base'} --beastlib $beastlib";
     @outputs = ($initial_file_list{'deface_t1w'});
     @output_types = qw(defaced);
     

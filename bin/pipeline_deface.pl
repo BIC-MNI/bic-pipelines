@@ -47,6 +47,9 @@ my $model_name;
 my $nonlinear=0;
 my $keep_tmp=0;
 my $output_base;
+my $beastlib;
+my $mri_3t;
+
 GetOptions (
   "verbose"       => \$verbose,
   "clobber"       => \$clobber,
@@ -62,7 +65,9 @@ GetOptions (
   'brain-mask=s'  => \$brain_mask,
   'keep-tmp'      => \$keep_tmp,
   'keep-real-range' => \$keep_real_range,
-  'output=s'        => \$output_base,
+  'output=s'      => \$output_base,
+  'beastlib=s'    => \$beastlib,
+  '3t'            => \$mri_3t,
 ); 
 
 die <<HELP
@@ -80,6 +85,7 @@ Usage: $me <T1w> [T2w] [PDw]
   --t2w-xfm <t2w.xfm>
   --pdw-xfm <pdw.xfm>
   --keep-real-range - keep the real range of the data the same 
+  --beastlib <dir> - location of BEaST library
   ]
 HELP
 if $#ARGV<1 || ! $output_base || !$model_name || !$model_dir;
@@ -116,6 +122,8 @@ push @args,'--watermark' if $watermark;
 push @args,'--t1w-xfm',$t1w_xfm if $t1w_xfm;
 push @args,'--t2w-xfm',$t2w_xfm if $t2w_xfm;
 push @args,'--pdw-xfm',$pdw_xfm if $pdw_xfm;
+push @args,'--beastlib',$beastlib if $beastlib;
+
 
 do_cmd(@args);
 
