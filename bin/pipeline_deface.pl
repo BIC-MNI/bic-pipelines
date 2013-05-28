@@ -71,7 +71,7 @@ GetOptions (
 ); 
 
 die <<HELP
-Usage: $me <T1w> [T2w] [PDw]
+Usage: $me <T1w> [T2w] [PDw] <oT1w> [oT2w] [oPDw]
  --model-dir <model directory>
  --model     <model name>
  --output <output_base>
@@ -86,25 +86,38 @@ Usage: $me <T1w> [T2w] [PDw]
   --pdw-xfm <pdw.xfm>
   --keep-real-range - keep the real range of the data the same 
   --beastlib <dir> - location of BEaST library
+  --3t if scan was made on 3T scanner
   ]
 HELP
 if $#ARGV<1 || ! $output_base || !$model_name || !$model_dir;
 
-my ($t1w,$t2w,$pdw)=@ARGV;
+my ($t1w,$t2w,$pdw,$ot1w,$ot2w,$opdw);
 
-@files_to_add_to_db=("${output_base}_t1w.mnc");
+if($#ARGV==1)
+{
+  ($t1w,$ot1w)=@ARGV;
+} elsif($#ARGV==3) {
+  ($t1w,$t2w,$ot1w,$ot2w)=@ARGV;
+} elsif($#ARGV==5) {
+  ($t1w,$t2w,$pdw,$ot1w,$ot2w,$opdw)=@ARGV;
+} else {
+  die "Incorrect number of arguments!\n";
+}
+  
+@files_to_add_to_db=($ot1w);
 
 my @args=('deface_minipipe.pl',$t1w,);
+
 if($t2w)
 {
   push @args,$t2w;
-  push @files_to_add_to_db,"${output_base}_t2w.mnc";
+  push @files_to_add_to_db,$ot2w;
 }
 
 if($pdw)
 {
   push @args,$pdw;
-  push @files_to_add_to_db,"${output_base}_pdw.mnc";
+  push @files_to_add_to_db,$opdw;
 }
 
 push @args,$output_base;
@@ -123,6 +136,7 @@ push @args,'--t1w-xfm',$t1w_xfm if $t1w_xfm;
 push @args,'--t2w-xfm',$t2w_xfm if $t2w_xfm;
 push @args,'--pdw-xfm',$pdw_xfm if $pdw_xfm;
 push @args,'--beastlib',$beastlib if $beastlib;
+push @args,'--3t' if $mri_3t;
 
 
 do_cmd(@args);

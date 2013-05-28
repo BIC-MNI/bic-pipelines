@@ -179,6 +179,7 @@ if($deface_volume)
     $program = "$bin_dir/pipeline_deface.pl";
     @inputs = ($initial_file_list{'native_t1w'});
     $parameter = " --model-dir ${model_dir} --model ${model} --keep-real-range --output $initial_file_list{'deface_base'} --beastlib $beastlib";
+    @outputs = ();
     @outputs = ($initial_file_list{'deface_t1w'});
     @output_types = qw(defaced);
     
@@ -197,6 +198,7 @@ if($deface_volume)
     }
     print "Outputs: @outputs \n";
     @fileID = create_function($program, \@inputs, $parameter, \@outputs, \@output_types, $type, 'native', '', $list_fileIDs{'native_t1w'}, (1, 1, 1, 1));
+
     $list_fileIDs{'deface_t1w'} = $fileID[0];
     $list_fileIDs{'deface_t2w'} = $fileID[1] if($native_t2w);
     $list_fileIDs{'deface_pdw'} = $fileID[2] if($native_pdw);
