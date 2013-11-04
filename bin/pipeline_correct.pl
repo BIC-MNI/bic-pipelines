@@ -95,11 +95,17 @@ delete $ENV{MINC_COMPRESS} if $compress;
 # convert to float
 do_cmd('mincreshape','-float','-normalize', $infile, "$tmpdir/0.mnc");
 #fix some broken minc files
-my $zspacing=`mincinfo -attvalue zspace:spacing $tmpdir/0.mnc`;
-chomp($zspacing);
-if($zspacing =~ /irregular/)
-{
-  do_cmd('minc_modify_header','-sinsert','zspace:spacing=regular__',"$tmpdir/0.mnc");
+
+my $i;
+
+# fix irregular spacing in all directions
+foreach $i ('x','y','z') { 
+  my $spacing=`mincinfo -attvalue ${i}space:spacing $tmpdir/0.mnc`;
+  chomp($spacing);
+  if($spacing =~ /irregular/)
+  {
+    do_cmd('minc_modify_header','-sinsert',"${i}space:spacing=regular__","$tmpdir/0.mnc");
+  }
 }
 
 if($denoise)
