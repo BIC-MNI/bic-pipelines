@@ -40,11 +40,11 @@ GetOptions(
 	   'clobber'      => \$clobber,
 	   'fallback'     => \$fallback,
 	   'correct=s'    => \$correct,
-	   'model_dir=s'    => \$modeldir,
-	   'model_name=s'   => \$model,
-	   'initial=s'     => \$initial,
-     'nlmask'        => \$nlmask,
-     'beastlib=s'    => \$beastlib,
+	   'model_dir=s'  => \$modeldir,
+	   'model_name=s' => \$model,
+	   'initial=s'    => \$initial,
+     'nlmask'       => \$nlmask,
+     'beastlib=s'   => \$beastlib,
 	   );
 
 #################
@@ -134,6 +134,7 @@ if (-e $regxfm && !$clobber) {
       $infile=$input_save;
     }else {
       do_cmd('cp',"$tmpdir/tal.xfm","$tmpdir/tal1.xfm");
+      $infile=$input_save;
     }
     
     do_cmd('mincresample',$infile,'-like',$modelfn,'-transform',"$tmpdir/tal1.xfm","$tmpdir/tal1.mnc");
@@ -141,7 +142,8 @@ if (-e $regxfm && !$clobber) {
     {
       do_cmd('icc_mask.pl',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc",'--model',$modelfn,'--icc-model',$model_brain_mask);
     } else {
-      do_cmd('mincbeast',$beastlib, "$tmpdir/tal1.mnc", "$tmpdir/tal1_mask.mnc",'-fill','-median','-same_resolution','-configuration',"$beastlib/default.2mm.conf");
+      do_cmd('mincbeast',$beastlib, "$tmpdir/tal1.mnc", "$tmpdir/tal1_mask.mnc",
+             '-fill','-median','-same_resolution','-configuration',"$beastlib/default.2mm.conf");
     }
     # second stage
     # map back to the input space

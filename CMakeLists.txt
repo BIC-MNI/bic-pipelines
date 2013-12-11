@@ -20,7 +20,6 @@ INSTALL(PROGRAMS
   bin/pipeline_launch_pve.pl
   bin/pipeline_longitudinal.pl
   bin/pipeline_mritotal.pl
-  bin/pipeline_nlfit_smr.pl
   bin/pipeline_nlr.pl
   bin/pipeline_pd_t1.pl
   bin/pipeline_pve.pl
