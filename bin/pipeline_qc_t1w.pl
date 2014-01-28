@@ -39,12 +39,12 @@ $outline="$tmpdir/outline.mnc";
 my $imagelabel = sprintf "%s/%s/%5.1f years ", $candID,$VisitLabel,$age;
     
 if ( (!-e $nl_img) || $clobber) {
-  do_cmd('minclookup', '-spectral', '-range', 25, 75, $nl_t1w , "$tmpdir/t1w_spect.mnc",'-byte');
+  do_cmd('minclookup', '-gray', '-range', 25, 75, $nl_t1w , "$tmpdir/t1w_spect.mnc",'-byte');
   do_cmd('mincmath','-max',"$tmpdir/t1w_spect.mnc", $outline,"$tmpdir/t1w_outline.mnc"); 
   make_multipane($tmpdir, "$tmpdir/t1w_outline.mnc" , "TAL T1W ".$imagelabel, $nl_img);
   @files_to_add_to_db = (@files_to_add_to_db, $nl_img);
 }
-    
+
 print("Files created:@files_to_add_to_db\n");
 
 ######################################################################
