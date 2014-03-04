@@ -56,7 +56,7 @@ sub create_header_info_for_many_parented
     {
       chomp($line);
       $line =~ s/ //g;
-      print("minc_modify_header $tmp_file -sinsert $line\n");
+      #print("minc_modify_header $tmp_file -sinsert $line\n");
       `minc_modify_header $tmp_file -sinsert $line`;
     }
     
@@ -69,7 +69,7 @@ sub create_header_info_for_many_parented
       {
           chomp($line);
           $line =~ s/ //g;
-          print("minc_modify_header $tmp_file -sinsert $line\n");
+          #print("minc_modify_header $tmp_file -sinsert $line\n");
           `minc_modify_header $tmp_file -sinsert $line`;
       }
     }
