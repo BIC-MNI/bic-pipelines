@@ -137,7 +137,7 @@ if (-e $regxfm && !$clobber) {
       $infile=$input_save;
     }
     
-    do_cmd('mincresample',$infile,'-like',$modelfn,'-transform',"$tmpdir/tal1.xfm","$tmpdir/tal1.mnc");
+    do_cmd('mincresample',$infile,'-like',"$beastlib/union_mask.mnc",'-transform',"$tmpdir/tal1.xfm","$tmpdir/tal1.mnc");
     if($nlmask)
     {
       do_cmd('icc_mask.pl',"$tmpdir/tal1.mnc","$tmpdir/tal1_mask.mnc",'--model',$modelfn,'--icc-model',$model_brain_mask);
