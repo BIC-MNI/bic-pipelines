@@ -62,7 +62,7 @@ if($model_name)
 ##Wow - a lot of arguments. we require the t1,t2,pd cliped data. the tal transformation, and the tal mask
 ##we output the grid file, the xfm file, and the three non-linear transformed anatomicals
 
-if ($#ARGV < 3){ die "Usage: $me <infile_tal_t1> <infile_msk> <outfile_xfm> <outfile_t1> [--model_dir <dir> --model_name <base name>]\n"; }
+if ($#ARGV < 3){ die "Usage: $me <infile_tal_t1> <infile_msk> <outfile_grid> <outfile_xfm> <outfile_t1> [--model_dir <dir> --model_name <base name>]\n"; }
 
 $modelfn  = "$modeldir/$model.mnc";
 $model_mask = "$modeldir/${model}_mask.mnc";
@@ -92,7 +92,6 @@ my $tmpdir = &tempdir( "$me-XXXXXXXX", TMPDIR => 1, CLEANUP => 1 );
 if (-e $outfile_xfm && !$clobber) 
 {
     print "Found $outfile_xfm... skipping\n";
-
 }
 else {   
     @args = ('nlfit_s', $infile_t1, $modelfn,$outfile_xfm, '-source_mask',$infile_msk,'-target_mask',$model_mask,'-level',2);
