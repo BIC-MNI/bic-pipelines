@@ -225,6 +225,7 @@ foreach $type(@types)
     @inputs = [$initial_file_list{$native_current}];
     $parameter = "--iterations ${nu_runs} --model ${model_dir}/${model_spec}.mnc --model-mask ${model_dir}/${model}_mask.mnc --stx --verbose";
     $parameter.= ' --3t' if $mri_3t;
+    $parameter = $parameter." --xfm $manual_file_list{'tal_xfm_t1w'}" if $manual_dir && -e $manual_file_list{'tal_xfm_t1w'};
     @outputs = [$initial_file_list{$clp_current}];
     @output_types = qw(clp_mnc);
     @fileID = create_function($program, @inputs, $parameter, @outputs, \@output_types, $type, 'native', '', $list_fileIDs{$native_current}, (1, 1, 1,1));
