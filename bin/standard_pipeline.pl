@@ -55,6 +55,9 @@ my $manual_dir;
 my $benchmark;
 my $run_face=0;
 my $mri_3t;
+my $segmentation_resolution='2mm';
+my $non_linear_fit_level=2;
+
 # command line options
 
 GetOptions(
@@ -76,7 +79,9 @@ GetOptions(
      'run-face'          => \$run_face,
      '3t'                => \$mri_3t,
      'beastlib=s'        => \$beastlib,
-	   );
+     'segmentation_resolution=s' => \$segmentation_resolution,
+     'non_linear_fit_level=f' => \$non_linear_fit_level
+      );
 
 my $Help = <<HELP;
   Usage: $me <candID> <visitno> <T1 file> [T2 file] [PD file]
@@ -98,6 +103,8 @@ my $Help = <<HELP;
     --run-face run FACE surface extraction algorithm
     --beastlib <dir> - location of BEaST library, default: $beastlib
     --3t use N3 parameters for 3T
+    --segmentation_resolution <res> takes 1mm, 2mm or 4mm, default: $segmentation_resolution
+    --non_linear_fit_level <f> Perform fitting down to step , minimum 0.5, default: $non_linear_fit_level
   Problems or comments should be sent to: vfonov\@bic.mni.mcgill.ca
 HELP
 
@@ -321,7 +328,7 @@ $program = "$bin_dir/pipeline_iccmask_stx.pl";
 @inputs = ($initial_file_list{'tal_t1w'} );
 push (@inputs, $initial_file_list{'tal_t2w'}) if $native_t2w;
 push (@inputs, $initial_file_list{'tal_pdw'}) if $native_pdw;
-$parameter = "--eye_mask ${model_dir}/${model}_eye_mask.mnc --beastlib $beastlib ";
+$parameter = "--eye_mask ${model_dir}/${model}_eye_mask.mnc --beastlib ${beastlib} --beast_resolution default.${segmentation_resolution}.conf ";
 @outputs = [$initial_file_list{'tal_comp_msk'}];
 @output_types = qw(tal_comp_msk);
 @fileID = create_function($program, \@inputs, $parameter, @outputs, \@output_types, '', 'linear', '', "$list_fileIDs{'tal_t1w'}".($native_t2w?",$list_fileIDs{'tal_t2w'}":'').($native_pdw?",$list_fileIDs{'tal_pdw'}":''), (1));
@@ -344,7 +351,7 @@ unless($disable_nonlinear)
   ##non linear register all three anatomicals
   $program = "$bin_dir/pipeline_nlr.pl ";
   @inputs = [$initial_file_list{'tal_t1w'},$initial_file_list{'tal_comp_msk'}];
-  $parameter = " --model_dir ${model_dir} --model_name ${model}";
+  $parameter = " --model_dir ${model_dir} --model_name ${model} --level ${non_linear_fit_level}";
   @outputs = [$initial_file_list{'nl_grid'}, $initial_file_list{'nl_xfm'}, $initial_file_list{'nl_t1w'}];
   @output_types = qw(nlr_grid nlr_xfm nlr_t1w);
 
