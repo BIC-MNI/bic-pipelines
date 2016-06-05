@@ -21,6 +21,7 @@ my $nlmask  = 0;
 my $model;
 my $icc_model;
 my $beastlib='';
+my $beast_resolution = "default.2mm.conf";
 
 GetOptions(
 	   'verbose'    => \$verbose,
@@ -30,9 +31,10 @@ GetOptions(
      'model=s'    => \$model,
      'icc_model=s' => \$icc_model,
      'beastlib=s' => \$beastlib,
+     'beast_resolution=s' => \$beast_resolution
 	   );
 
-if ($#ARGV < 1){ die "Usage: $me <infile_t1> [infilet2] [infilepd] <outfile_mnc> [--eye_mask <eye_mask>] [--nlmask --model model_t1.mnc ---icc_model model_icc.mnc --beastlib <lib>]\n"; }
+if ($#ARGV < 1){ die "Usage: $me <infile_t1> [infilet2] [infilepd] <outfile_mnc> [--eye_mask <eye_mask>] [--nlmask --model model_t1.mnc ---icc_model model_icc.mnc --beastlib <lib>] --beast_resolution <resolution_file>\n"; }
 
 #####################
 ##infile includes the tal transformed anatomical data
@@ -56,7 +58,7 @@ if($nlmask) {
   do_cmd('icc_mask.pl',$in_t1w, "$tmpdir/mri_mask.mnc",'--model',$model,'--icc-model',$icc_model);
 } else {
   do_cmd('mincresample','-nearest','-like',"$beastlib/union_mask.mnc",$in_t1w,"$tmpdir/input_t1w.mnc");
-  do_cmd('mincbeast', $beastlib, "$tmpdir/input_t1w.mnc", "$tmpdir/mri_mask_.mnc",'-fill','-same_resolution','-median','-configuration',"$beastlib/default.2mm.conf");
+  do_cmd('mincbeast', $beastlib, "$tmpdir/input_t1w.mnc", "$tmpdir/mri_mask_.mnc",'-fill','-same_resolution','-median','-configuration',"${beastlib}/${beast_resolution}");
   do_cmd('mincresample','-nearest','-like',$in_t1w,"$tmpdir/mri_mask_.mnc","$tmpdir/mri_mask.mnc");
 }
 
