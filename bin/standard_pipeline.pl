@@ -162,10 +162,10 @@ do_cmd('param2xfm',$identity_file);
 my %manual_file_list;
 %manual_file_list = get_list_files_native_files("${manual_dir}/${candid}/${visitno}", $candid, $visitno, $native_t1w, $native_t2w, $native_pdw ) if $manual_dir;
 
-#fix files!
-$native_t1w=fix_sampling($native_t1w);
-$native_t2w=fix_sampling($native_t2w);
-$native_pdw=fix_sampling($native_pdw);
+#fix sampling if need to
+$native_t1w=fix_sampling($native_t1w) if $native_t1w ;
+$native_t2w=fix_sampling($native_t2w) if $native_t2w ;
+$native_pdw=fix_sampling($native_pdw) if $native_pdw ;
 
 my %initial_file_list = get_list_files_native_files($base_dir, $candid, $visitno, $native_t1w, $native_t2w, $native_pdw );
 
