@@ -11,7 +11,7 @@ suitable for population analysis in standard stereotaxic space.
 Installation
 -------------
 All pipelines are written in high-level scripting language (Perl,Python or Ruby) 
-and require complete installation of minc-toolkit  ( https://github.com/vfonov/minc-toolkit )
+and require complete installation of minc-toolkit  ( https://github.com/BIC-MNI/minc-toolkit )
 
 installation consist of copying all scripts into the same directory, and setting PATH and PERL5LIB to include this directiry
 
