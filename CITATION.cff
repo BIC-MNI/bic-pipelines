@@ -1,0 +1,48 @@
+# Citation metadata for bic-pipelines (Citation File Format, https://citation-file-format.github.io/).
+# The author list comes from the commit history and from the history comments in the files.
+
+cff-version: 1.2.0
+title: bic-pipelines
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - given-names: Vladimir
+    family-names: Fonov
+    email: vladimir.fonov@gmail.com
+    affiliation: McGill University
+    orcid: "https://orcid.org/0000-0003-3402-7749"
+  - given-names: Andrew L.
+    family-names: Janke
+    orcid: "https://orcid.org/0000-0003-0547-5171"
+  - given-names: Larry
+    family-names: Baer
+  - given-names: Matthew
+    family-names: Kitching
+  - given-names: Haz-Edine
+    family-names: Assemlal
+  - given-names: D. Louis
+    family-names: Collins
+    affiliation: McGill University
+    orcid: "https://orcid.org/0000-0002-8432-7021"
+  - given-names: Gabriel A.
+    family-names: Devenyi
+    email: gdevenyi@gmail.com
+    affiliation: Douglas Mental Health University Institute
+    orcid: "https://orcid.org/0000-0002-7766-1187"
+  - given-names: Pierre-Olivier
+    family-names: Quirion
+  - given-names: Jennings
+    family-names: Zhang
+repository-code: "https://github.com/BIC-MNI/bic-pipelines"
+abstract: >-
+  Brain Imaging Centre image processing pipelines: basic pipelines that
+  process raw scanner output in MINC format and give output for population
+  analysis in standard stereotaxic space.
+keywords:
+  - MINC
+  - medical imaging
+  - neuroimaging
+  - MRI
+  - pipeline
+  - stereotaxic space
